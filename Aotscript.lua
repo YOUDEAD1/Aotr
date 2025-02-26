@@ -21,55 +21,49 @@ local function autoFarm()
     sendNotification("Auto Farm", "بدء استهداف العمالقة في AOT:R!", 5)
     while autoFarmActive do
         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            for _, enemy in pairs(workspace:GetDescendants()) do
+            -- البحث عن العمالقة في Workspace
+            for _, enemy in pairs(workspace:GetChildren()) do
                 local humanoid = enemy:FindFirstChild("Humanoid")
-                local nape = enemy:FindFirstChild("Nape") -- استهداف مؤخرة العنق في AOT:R
-                if humanoid and nape and humanoid.Health > 0 and enemy ~= player.Character then
+                local rootPart = enemy:FindFirstChild("HumanoidRootPart")
+                local nape = enemy:FindFirstChild("Nape") -- مؤخرة العنق في AOT:R
+                if humanoid and rootPart and nape and humanoid.Health > 0 and enemy ~= player.Character then
                     -- التحرك إلى مؤخرة العنق
                     player.Character.HumanoidRootPart.CFrame = nape.CFrame * CFrame.new(0, 0, -1)
                     -- تفعيل السيف
                     local tool = player.Character:FindFirstChildOfClass("Tool")
                     if tool then
-                        for _ = 1, 20 do
-                            tool:Activate()
-                            task.wait(0.005)
-                        end
-                        -- محاولة استدعاء Remote Event للضرب
-                        local attackRemote = game.ReplicatedStorage:FindFirstChild("Attack") or game.ReplicatedStorage:FindFirstChild("DamageEvent")
+                        tool:Activate()
+                        -- استدعاء Remote Event افتراضي للضرب
+                        local attackRemote = game.ReplicatedStorage:FindFirstChild("Damage") or game.ReplicatedStorage:FindFirstChild("Attack")
                         if attackRemote then
-                            attackRemote:FireServer(nape)
+                            attackRemote:FireServer(nape.Position) -- إرسال موقع العنق
                         end
                     end
+                    task.wait(0.1) -- تأخير بسيط بين الضربات
                 end
             end
+        else
+            sendNotification("خطأ", "الشخصية غير موجودة، أعد المحاولة!", 5)
         end
         task.wait(0.05)
     end
 end
 
--- دالة للهروب تلقائيًا من العملاق بدون ضغط أزرار
+-- دالة للهروب تلقائيًا من العملاق
 local function autoEscape()
     sendNotification("Auto Escape", "تفعيل الهروب التلقائي في AOT:R!", 5)
     while autoEscapeActive do
         if player.Character and player.Character:FindFirstChild("Humanoid") then
-            -- التحقق من ظهور واجهة QTE التي تحتوي على الحروف
-            local qteGui = player.PlayerGui:FindFirstChild("QTE") -- اسم افتراضي لواجهة QTE في AOT:R
-            if qteGui then
-                -- التحقق من وجود أي حروف W, S, A, D على الشاشة
-                for _, element in pairs(qteGui:GetDescendants()) do
-                    if element:IsA("TextLabel") or element:IsA("TextButton") then
-                        local text = element.Text:lower()
-                        if text == "w" or text == "s" or text == "a" or text == "d" then
-                            -- إذا وُجدت الحروف، نقل اللاعب مباشرة
-                            player.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 20, 40)
-                            player.Character.Humanoid.WalkSpeed = 16 -- إعادة السرعة
-                            break
-                        end
-                    end
-                end
+            -- التحقق من الإمساك
+            if player.Character.Humanoid.WalkSpeed == 0 then
+                -- إعادة تموضع اللاعب للهروب
+                player.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 20, 40)
+                player.Character.Humanoid.WalkSpeed = 16 -- إعادة السرعة
+                -- إشعار للتأكد من التنفيذ
+                sendNotification("Escape", "تم الهروب من العملاق!", 3)
             end
         end
-        task.wait(0.5) -- تأخير أطول لتجنب الإزعاج عندما لا تكون محاصرًا
+        task.wait(0.5) -- تأخير لتجنب الإزعاج عندما لا تكون محاصرًا
     end
 end
 
@@ -77,19 +71,24 @@ end
 local function autoReplay()
     sendNotification("Auto Replay", "بدء إعادة اللعب التلقائي في AOT:R!", 5)
     while autoReplayActive do
-        local endGui = player.PlayerGui:FindFirstChild("MissionEndMenu") -- واجهة نهاية المباراة في AOT:R
+        -- التحقق من شاشة نهاية المباراة
+        local endGui = player.PlayerGui:FindFirstChild("MissionEndMenu") -- واجهة النهاية في AOT:R
         if endGui then
             local retryButton = endGui:FindFirstChild("Retry") or endGui:FindFirstChild("PlayAgain")
-            if retryButton and retryButton:IsA("TextButton") then
+            if retryButton then
+                -- محاكاة النقر على زر "Retry"
+                if retryButton:IsA("TextButton") then
+                    retryButton:Activate()
+                end
                 local clickEvent = retryButton:FindFirstChildOfClass("RemoteEvent")
                 if clickEvent then
                     clickEvent:FireServer()
-                else
-                    retryButton:Activate()
                 end
             else
+                -- إعادة تحميل اللعبة كبديل
                 game:GetService("TeleportService"):Teleport(game.PlaceId, player)
             end
+            task.wait(2) -- تأخير للسماح بالنقر
         end
         task.wait(1)
     end
