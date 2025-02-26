@@ -16,36 +16,37 @@ local function sendNotification(title, text, duration)
     end)
 end
 
--- دالة لقتل العمالقة (Auto Farm)
+-- دالة لقتل العمالقة (Auto Farm معدلة)
 local function autoFarm()
-    sendNotification("Auto Farm", "بدء استهداف العمالقة في AOT:R!", 5)
+    sendNotification("Auto Farm", "بدء قتل العمالقة في AOT:R!", 5)
     while autoFarmActive do
         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             -- البحث عن العمالقة في Workspace
             for _, enemy in pairs(workspace:GetChildren()) do
                 local humanoid = enemy:FindFirstChild("Humanoid")
                 local rootPart = enemy:FindFirstChild("HumanoidRootPart")
-                local nape = enemy:FindFirstChild("Nape") -- مؤخرة العنق في AOT:R
+                local nape = enemy:FindFirstChild("Nape") -- مؤخرة العنق كنقطة الضعف
                 if humanoid and rootPart and nape and humanoid.Health > 0 and enemy ~= player.Character then
-                    -- التحرك إلى مؤخرة العنق
-                    player.Character.HumanoidRootPart.CFrame = nape.CFrame * CFrame.new(0, 0, -1)
+                    -- التحرك مباشرة إلى مؤخرة العنق
+                    player.Character.HumanoidRootPart.CFrame = nape.CFrame * CFrame.new(0, 0, 2) -- وضع اللاعب خلف العنق
                     -- تفعيل السيف
                     local tool = player.Character:FindFirstChildOfClass("Tool")
                     if tool then
                         tool:Activate()
-                        -- استدعاء Remote Event افتراضي للضرب
+                        -- محاكاة الضربة على مؤخرة العنق
                         local attackRemote = game.ReplicatedStorage:FindFirstChild("Damage") or game.ReplicatedStorage:FindFirstChild("Attack")
                         if attackRemote then
-                            attackRemote:FireServer(nape.Position) -- إرسال موقع العنق
+                            -- إرسال موقع العنق مع ضرر كافٍ للقتل
+                            attackRemote:FireServer(nape.Position, 1000) -- افتراض ضرر عالٍ لضمان القتل
                         end
                     end
-                    task.wait(0.1) -- تأخير بسيط بين الضربات
+                    task.wait(0.05) -- تأخير بسيط بين الهجمات
                 end
             end
         else
             sendNotification("خطأ", "الشخصية غير موجودة، أعد المحاولة!", 5)
         end
-        task.wait(0.05)
+        task.wait(0.1) -- تأخير لتجنب التحميل الزائد
     end
 end
 
@@ -54,16 +55,13 @@ local function autoEscape()
     sendNotification("Auto Escape", "تفعيل الهروب التلقائي في AOT:R!", 5)
     while autoEscapeActive do
         if player.Character and player.Character:FindFirstChild("Humanoid") then
-            -- التحقق من الإمساك
             if player.Character.Humanoid.WalkSpeed == 0 then
-                -- إعادة تموضع اللاعب للهروب
                 player.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 20, 40)
-                player.Character.Humanoid.WalkSpeed = 16 -- إعادة السرعة
-                -- إشعار للتأكد من التنفيذ
+                player.Character.Humanoid.WalkSpeed = 16
                 sendNotification("Escape", "تم الهروب من العملاق!", 3)
             end
         end
-        task.wait(0.5) -- تأخير لتجنب الإزعاج عندما لا تكون محاصرًا
+        task.wait(0.5)
     end
 end
 
@@ -71,12 +69,10 @@ end
 local function autoReplay()
     sendNotification("Auto Replay", "بدء إعادة اللعب التلقائي في AOT:R!", 5)
     while autoReplayActive do
-        -- التحقق من شاشة نهاية المباراة
-        local endGui = player.PlayerGui:FindFirstChild("MissionEndMenu") -- واجهة النهاية في AOT:R
+        local endGui = player.PlayerGui:FindFirstChild("MissionEndMenu")
         if endGui then
             local retryButton = endGui:FindFirstChild("Retry") or endGui:FindFirstChild("PlayAgain")
             if retryButton then
-                -- محاكاة النقر على زر "Retry"
                 if retryButton:IsA("TextButton") then
                     retryButton:Activate()
                 end
@@ -85,10 +81,9 @@ local function autoReplay()
                     clickEvent:FireServer()
                 end
             else
-                -- إعادة تحميل اللعبة كبديل
                 game:GetService("TeleportService"):Teleport(game.PlaceId, player)
             end
-            task.wait(2) -- تأخير للسماح بالنقر
+            task.wait(2)
         end
         task.wait(1)
     end
@@ -109,17 +104,15 @@ frame.Parent = ScreenGui
 frame.Draggable = true
 frame.Active = true
 
--- مؤشر مخصص باللون الأبيض
 local customCursor = Instance.new("ImageLabel")
 customCursor.Size = UDim2.new(0, 20, 0, 20)
 customCursor.BackgroundTransparency = 1
-customCursor.Image = "rbxassetid://7072706765" -- دائرة بيضاء
+customCursor.Image = "rbxassetid://7072706765"
 customCursor.ImageColor3 = Color3.fromRGB(255, 255, 255)
 customCursor.ZIndex = 10
 customCursor.Parent = ScreenGui
 customCursor.Visible = false
 
--- تحديث موقع المؤشر
 mouse.Move:Connect(function()
     local mousePosX = mouse.X
     local mousePosY = mouse.Y
@@ -134,7 +127,6 @@ mouse.Move:Connect(function()
     end
 end)
 
--- عنوان القائمة
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(0, 330, 0, 50)
 titleLabel.Position = UDim2.new(0, 10, 0, 10)
@@ -145,7 +137,6 @@ titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 28
 titleLabel.Parent = frame
 
--- زر Auto Farm
 local farmButton = Instance.new("TextButton")
 farmButton.Size = UDim2.new(0, 200, 0, 50)
 farmButton.Position = UDim2.new(0, 75, 0, 100)
@@ -164,7 +155,6 @@ farmButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- زر Auto Escape
 local escapeButton = Instance.new("TextButton")
 escapeButton.Size = UDim2.new(0, 200, 0, 50)
 escapeButton.Position = UDim2.new(0, 75, 0, 160)
@@ -183,7 +173,6 @@ escapeButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- زر Auto Replay
 local replayButton = Instance.new("TextButton")
 replayButton.Size = UDim2.new(0, 200, 0, 50)
 replayButton.Position = UDim2.new(0, 75, 0, 220)
@@ -202,7 +191,6 @@ replayButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- زر إخفاء/إظهار القائمة
 local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.new(0, 200, 0, 50)
 toggleButton.Position = UDim2.new(0, 75, 0, 380)
@@ -221,5 +209,4 @@ toggleButton.MouseButton1Click:Connect(function()
     customCursor.Visible = false
 end)
 
--- إشعار عند تحميل السكريبت
 sendNotification("AOT:R Script", "تم تحميل السكريبت بنجاح بواسطة YOUDEAD1!", 5)
