@@ -10,7 +10,7 @@ local function sendNotification(title, text, duration)
         game:GetService("StarterGui"):SetCore("SendNotification", {
             Title = title,
             Text = text,
-            Icon = "rbxassetid://1234567890", -- استبدل الـ ID برمز إذا أردت
+            Icon = "rbxassetid://1234567890", -- استبدل الـ ID إذا أردت
             Duration = duration or 5
         })
     end)
@@ -18,30 +18,30 @@ end
 
 -- دالة لقتل العمالقة (Auto Farm)
 local function autoFarm()
-    sendNotification("Auto Farm", "Auto Farm has started!", 5) -- إشعار عند التشغيل
+    sendNotification("Auto Farm", "Targeting Titan necks!", 5)
     while autoFarmActive do
         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             for _, enemy in pairs(workspace:GetDescendants()) do
                 local humanoid = enemy:FindFirstChild("Humanoid")
-                local rootPart = enemy:FindFirstChild("HumanoidRootPart") or enemy:FindFirstChild("Torso")
-                if humanoid and rootPart and humanoid.Health > 0 and enemy ~= player.Character then
-                    -- التحرك إلى العدو
-                    player.Character.HumanoidRootPart.CFrame = rootPart.CFrame * CFrame.new(0, 0, -5) -- مسافة قريبة من العدو
+                local neckPart = enemy:FindFirstChild("Neck") or enemy:FindFirstChild("Head") -- استهداف العنق أو الرأس
+                if humanoid and neckPart and humanoid.Health > 0 and enemy ~= player.Character then
+                    -- التحرك إلى نقطة ضعف العملاق (العنق)
+                    player.Character.HumanoidRootPart.CFrame = neckPart.CFrame * CFrame.new(0, 0, -2) -- قريب من العنق
                     -- تفعيل السلاح
                     local tool = player.Character:FindFirstChildOfClass("Tool")
                     if tool then
-                        tool:Activate() -- محاكاة الهجوم
+                        tool:Activate() -- ضرب العنق
                     end
                 end
             end
         end
-        task.wait(0.1) -- تأخير لتحسين الأداء
+        task.wait(0.05) -- تأخير أقل لسرعة أكبر
     end
 end
 
 -- دالة لتشغيل المهام تلقائيًا (Auto Mission)
 local function autoMission()
-    sendNotification("Auto Mission", "Auto Mission has started!", 5) -- إشعار عند التشغيل
+    sendNotification("Auto Mission", "Auto Mission has started!", 5)
     while autoMissionActive do
         local missionFolder = game.Workspace:FindFirstChild("Missions") or game.ReplicatedStorage:FindFirstChild("Missions")
         if missionFolder then
@@ -56,65 +56,120 @@ local function autoMission()
     end
 end
 
--- إنشاء واجهة القائمة
+-- إنشاء واجهة القائمة الكبيرة
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = game:GetService("CoreGui")
 ScreenGui.Name = "AotRScriptMenu"
 ScreenGui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 200, 0, 300)
-frame.Position = UDim2.new(0.5, -100, 0.5, -150)
-frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+frame.Size = UDim2.new(0, 300, 0, 400) -- قائمة أكبر
+frame.Position = UDim2.new(0.5, -150, 0.5, -200)
+frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- لون أسود
 frame.Parent = ScreenGui
 frame.Draggable = true
 frame.Active = true
 frame.BorderSizePixel = 0
 
--- زر Auto Farm
-local farmButton = Instance.new("TextButton")
-farmButton.Size = UDim2.new(0, 180, 0, 50)
-farmButton.Position = UDim2.new(0, 10, 0, 10)
-farmButton.Text = "تشغيل Auto Farm"
-farmButton.Parent = frame
-farmButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-farmButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-farmButton.Font = Enum.Font.SourceSansBold
-farmButton.TextSize = 20
+-- عنوان القائمة
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(0, 280, 0, 40)
+titleLabel.Position = UDim2.new(0, 10, 0, 10)
+titleLabel.Text = "Aot Script by YOUDEAD1"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- نص أبيض
+titleLabel.BackgroundTransparency = 1
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.TextSize = 24
+titleLabel.Parent = frame
 
-farmButton.MouseButton1Click:Connect(function()
-    autoFarmActive = not autoFarmActive
-    farmButton.Text = autoFarmActive and "توقيف Auto Farm" or "تشغيل Auto Farm"
-    farmButton.BackgroundColor3 = autoFarmActive and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0)
-    if autoFarmActive then
+-- Auto Farm Section
+local farmLabel = Instance.new("TextLabel")
+farmLabel.Size = UDim2.new(0, 180, 0, 40)
+farmLabel.Position = UDim2.new(0, 10, 0, 60)
+farmLabel.Text = "Auto Farm"
+farmLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+farmLabel.BackgroundTransparency = 1
+farmLabel.Font = Enum.Font.SourceSansBold
+farmLabel.TextSize = 20
+farmLabel.Parent = frame
+
+local farmOnButton = Instance.new("TextButton")
+farmOnButton.Size = UDim2.new(0, 40, 0, 40)
+farmOnButton.Position = UDim2.new(0, 200, 0, 60)
+farmOnButton.Text = "ON"
+farmOnButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+farmOnButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+farmOnButton.Font = Enum.Font.SourceSansBold
+farmOnButton.TextSize = 18
+farmOnButton.Parent = frame
+
+local farmOffButton = Instance.new("TextButton")
+farmOffButton.Size = UDim2.new(0, 40, 0, 40)
+farmOffButton.Position = UDim2.new(0, 250, 0, 60)
+farmOffButton.Text = "OFF"
+farmOffButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+farmOffButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+farmOffButton.Font = Enum.Font.SourceSansBold
+farmOffButton.TextSize = 18
+farmOffButton.Parent = frame
+
+farmOnButton.MouseButton1Click:Connect(function()
+    if not autoFarmActive then
+        autoFarmActive = true
         task.spawn(autoFarm)
     end
 end)
 
--- زر Auto Mission
-local missionButton = Instance.new("TextButton")
-missionButton.Size = UDim2.new(0, 180, 0, 50)
-missionButton.Position = UDim2.new(0, 10, 0, 70)
-missionButton.Text = "تشغيل Auto Mission"
-missionButton.Parent = frame
-missionButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-missionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-missionButton.Font = Enum.Font.SourceSansBold
-missionButton.TextSize = 20
+farmOffButton.MouseButton1Click:Connect(function()
+    autoFarmActive = false
+end)
 
-missionButton.MouseButton1Click:Connect(function()
-    autoMissionActive = not autoMissionActive
-    missionButton.Text = autoMissionActive and "توقيف Auto Mission" or "تشغيل Auto Mission"
-    missionButton.BackgroundColor3 = autoMissionActive and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0)
-    if autoMissionActive then
+-- Auto Mission Section
+local missionLabel = Instance.new("TextLabel")
+missionLabel.Size = UDim2.new(0, 180, 0, 40)
+missionLabel.Position = UDim2.new(0, 10, 0, 110)
+missionLabel.Text = "Auto Mission"
+missionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+missionLabel.BackgroundTransparency = 1
+missionLabel.Font = Enum.Font.SourceSansBold
+missionLabel.TextSize = 20
+missionLabel.Parent = frame
+
+local missionOnButton = Instance.new("TextButton")
+missionOnButton.Size = UDim2.new(0, 40, 0, 40)
+missionOnButton.Position = UDim2.new(0, 200, 0, 110)
+missionOnButton.Text = "ON"
+missionOnButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+missionOnButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+missionOnButton.Font = Enum.Font.SourceSansBold
+missionOnButton.TextSize = 18
+missionOnButton.Parent = frame
+
+local missionOffButton = Instance.new("TextButton")
+missionOffButton.Size = UDim2.new(0, 40, 0, 40)
+missionOffButton.Position = UDim2.new(0, 250, 0, 110)
+missionOffButton.Text = "OFF"
+missionOffButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+missionOffButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+missionOffButton.Font = Enum.Font.SourceSansBold
+missionOffButton.TextSize = 18
+missionOffButton.Parent = frame
+
+missionOnButton.MouseButton1Click:Connect(function()
+    if not autoMissionActive then
+        autoMissionActive = true
         task.spawn(autoMission)
     end
 end)
 
+missionOffButton.MouseButton1Click:Connect(function()
+    autoMissionActive = false
+end)
+
 -- زر إخفاء/إظهار القائمة
 local toggleButton = Instance.new("TextButton")
-toggleButton.Size = UDim2.new(0, 180, 0, 50)
-toggleButton.Position = UDim2.new(0, 10, 0, 130)
+toggleButton.Size = UDim2.new(0, 280, 0, 50)
+toggleButton.Position = UDim2.new(0, 10, 0, 340)
 toggleButton.Text = "إخفاء القائمة"
 toggleButton.Parent = frame
 toggleButton.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
