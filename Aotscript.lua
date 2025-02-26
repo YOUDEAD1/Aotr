@@ -4,14 +4,34 @@ local autoFarmActive = false
 local autoMissionActive = false
 local menuVisible = true
 
+-- دالة لإرسال إشعار
+local function sendNotification(title, text, duration)
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = title,
+            Text = text,
+            Icon = "rbxassetid://1234567890", -- استبدل الـ ID برمز إذا أردت
+            Duration = duration or 5
+        })
+    end)
+end
+
 -- دالة لقتل العمالقة (Auto Farm)
 local function autoFarm()
+    sendNotification("Auto Farm", "Auto Farm has started!", 5) -- إشعار عند التشغيل
     while autoFarmActive do
-        for _, enemy in pairs(workspace:GetChildren()) do
-            if enemy:FindFirstChild("Humanoid") and enemy ~= player.Character then
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            for _, enemy in pairs(workspace:GetDescendants()) do
                 local humanoid = enemy:FindFirstChild("Humanoid")
-                if humanoid then
-                    humanoid.Health = 0 -- قتل فوري
+                local rootPart = enemy:FindFirstChild("HumanoidRootPart") or enemy:FindFirstChild("Torso")
+                if humanoid and rootPart and humanoid.Health > 0 and enemy ~= player.Character then
+                    -- التحرك إلى العدو
+                    player.Character.HumanoidRootPart.CFrame = rootPart.CFrame * CFrame.new(0, 0, -5) -- مسافة قريبة من العدو
+                    -- تفعيل السلاح
+                    local tool = player.Character:FindFirstChildOfClass("Tool")
+                    if tool then
+                        tool:Activate() -- محاكاة الهجوم
+                    end
                 end
             end
         end
@@ -21,17 +41,18 @@ end
 
 -- دالة لتشغيل المهام تلقائيًا (Auto Mission)
 local function autoMission()
+    sendNotification("Auto Mission", "Auto Mission has started!", 5) -- إشعار عند التشغيل
     while autoMissionActive do
         local missionFolder = game.Workspace:FindFirstChild("Missions") or game.ReplicatedStorage:FindFirstChild("Missions")
         if missionFolder then
             for _, mission in pairs(missionFolder:GetChildren()) do
                 local clickDetector = mission:FindFirstChild("ClickDetector")
                 if clickDetector then
-                    fireclickdetector(clickDetector) -- محاكاة النقر
+                    fireclickdetector(clickDetector)
                 end
             end
         end
-        task.wait(1) -- تأخير للمهام
+        task.wait(1)
     end
 end
 
@@ -106,3 +127,6 @@ toggleButton.MouseButton1Click:Connect(function()
     frame.Visible = menuVisible
     toggleButton.Text = menuVisible and "إخفاء القائمة" or "إظهار القائمة"
 end)
+
+-- إشعار عند تحميل السكريبت
+sendNotification("Aot Script", "Script loaded successfully by YOUDEAD1!", 5)
