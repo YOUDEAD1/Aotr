@@ -1,4 +1,3 @@
-
 -- إعدادات أساسية
 local player = game.Players.LocalPlayer
 local autoFarmActive = false
@@ -11,22 +10,24 @@ local function autoFarm()
         for _, enemy in pairs(workspace:GetChildren()) do
             if enemy:FindFirstChild("Humanoid") and enemy ~= player.Character then
                 local humanoid = enemy:FindFirstChild("Humanoid")
-                humanoid.Health = 0 -- قتل فوري للعمالقة أو أي كائن بـ Humanoid
+                if humanoid then
+                    humanoid.Health = 0 -- قتل فوري
+                end
             end
         end
-        task.wait(0.1) -- تأخير بسيط باستخدام task.wait لتحسين الأداء
+        task.wait(0.1) -- تأخير لتحسين الأداء
     end
 end
 
 -- دالة لتشغيل المهام تلقائيًا (Auto Mission)
 local function autoMission()
     while autoMissionActive do
-        -- افتراض وجود نظام مهام في اللعبة
         local missionFolder = game.Workspace:FindFirstChild("Missions") or game.ReplicatedStorage:FindFirstChild("Missions")
         if missionFolder then
             for _, mission in pairs(missionFolder:GetChildren()) do
-                if mission:IsA("BoolValue") or mission:IsA("ObjectValue") then
-                    fireclickdetector(mission:FindFirstChild("ClickDetector")) -- محاكاة النقر لإكمال المهمة
+                local clickDetector = mission:FindFirstChild("ClickDetector")
+                if clickDetector then
+                    fireclickdetector(clickDetector) -- محاكاة النقر
                 end
             end
         end
@@ -36,7 +37,7 @@ end
 
 -- إنشاء واجهة القائمة
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Parent = game:GetService("CoreGui") -- وضعه في CoreGui لضمان العمل مع Xeno
+ScreenGui.Parent = game:GetService("CoreGui")
 ScreenGui.Name = "AotRScriptMenu"
 ScreenGui.ResetOnSpawn = false
 
@@ -45,7 +46,7 @@ frame.Size = UDim2.new(0, 200, 0, 300)
 frame.Position = UDim2.new(0.5, -100, 0.5, -150)
 frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 frame.Parent = ScreenGui
-frame.Draggable = true -- جعل القائمة قابلة للتحريك
+frame.Draggable = true
 frame.Active = true
 frame.BorderSizePixel = 0
 
@@ -65,7 +66,7 @@ farmButton.MouseButton1Click:Connect(function()
     farmButton.Text = autoFarmActive and "توقيف Auto Farm" or "تشغيل Auto Farm"
     farmButton.BackgroundColor3 = autoFarmActive and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0)
     if autoFarmActive then
-        task.spawn(autoFarm) -- تشغيل في خيط منفصل باستخدام task.spawn
+        task.spawn(autoFarm)
     end
 end)
 
@@ -85,7 +86,7 @@ missionButton.MouseButton1Click:Connect(function()
     missionButton.Text = autoMissionActive and "توقيف Auto Mission" or "تشغيل Auto Mission"
     missionButton.BackgroundColor3 = autoMissionActive and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0)
     if autoMissionActive then
-        task.spawn(autoMission) -- تشغيل في خيط منفصل
+        task.spawn(autoMission)
     end
 end)
 
@@ -105,4 +106,3 @@ toggleButton.MouseButton1Click:Connect(function()
     frame.Visible = menuVisible
     toggleButton.Text = menuVisible and "إخفاء القائمة" or "إظهار القائمة"
 end)
-التعديلات الرئيسية للعمل على 
