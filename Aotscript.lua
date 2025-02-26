@@ -10,7 +10,7 @@ local function sendNotification(title, text, duration)
         game:GetService("StarterGui"):SetCore("SendNotification", {
             Title = title,
             Text = text,
-            Icon = "rbxassetid://1234567890", -- استبدل الـ ID إذا أردت
+            Icon = "rbxassetid://1234567890",
             Duration = duration or 5
         })
     end)
@@ -23,11 +23,12 @@ local function autoFarm()
         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             for _, enemy in pairs(workspace:GetDescendants()) do
                 local humanoid = enemy:FindFirstChild("Humanoid")
-                local neckPart = enemy:FindFirstChild("Neck") or enemy:FindFirstChild("Head") -- استهداف العنق أو الرأس
+                local neckPart = enemy:FindFirstChild("Neck") or enemy:FindFirstChild("Head")
                 if humanoid and neckPart and humanoid.Health > 0 and enemy ~= player.Character then
-                    -- التحرك إلى نقطة ضعف العملاق (العنق)
-                    player.Character.HumanoidRootPart.CFrame = neckPart.CFrame * CFrame.new(0, 0, -2) -- قريب من العنق
-                    -- تفعيل السلاح
+                    -- التحرك إلى خلف العنق
+                    local behindNeckCFrame = neckPart.CFrame * CFrame.new(0, 0, 3) -- خلف العنق بـ 3 وحدات
+                    player.Character.HumanoidRootPart.CFrame = behindNeckCFrame
+                    -- تفعيل السلاح عند الوصول
                     local tool = player.Character:FindFirstChildOfClass("Tool")
                     if tool then
                         tool:Activate() -- ضرب العنق
@@ -35,7 +36,29 @@ local function autoFarm()
                 end
             end
         end
-        task.wait(0.05) -- تأخير أقل لسرعة أكبر
+        task.wait(0.05)
+    end
+end
+
+-- دالة للهروب من العملاق (QTE)
+local function autoEscape()
+    while true do
+        local gui = player.PlayerGui:GetChildren()
+        for _, child in pairs(gui) do
+            if child:IsA("ScreenGui") then
+                for _, element in pairs(child:GetDescendants()) do
+                    if element:IsA("TextLabel") or element:IsA("TextButton") then
+                        local text = element.Text:lower()
+                        if text:match("[qwerasdf]") then -- افتراض أن الحروف هي Q, W, E, R, A, S, D, F
+                            game:GetService("VirtualInputManager"):SendKeyEvent(true, text:upper(), false, game)
+                            task.wait(0.1)
+                            game:GetService("VirtualInputManager"):SendKeyEvent(false, text:upper(), false, game)
+                        end
+                    end
+                end
+            end
+        end
+        task.wait(0.1)
     end
 end
 
@@ -63,9 +86,9 @@ ScreenGui.Name = "AotRScriptMenu"
 ScreenGui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 300, 0, 400) -- قائمة أكبر
+frame.Size = UDim2.new(0, 300, 0, 400)
 frame.Position = UDim2.new(0.5, -150, 0.5, -200)
-frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- لون أسود
+frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 frame.Parent = ScreenGui
 frame.Draggable = true
 frame.Active = true
@@ -76,7 +99,7 @@ local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(0, 280, 0, 40)
 titleLabel.Position = UDim2.new(0, 10, 0, 10)
 titleLabel.Text = "Aot Script by YOUDEAD1"
-titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- نص أبيض
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.BackgroundTransparency = 1
 titleLabel.Font = Enum.Font.SourceSansBold
 titleLabel.TextSize = 24
@@ -177,11 +200,33 @@ toggleButton.TextColor3 = Color3.fromRGB(0, 0, 0)
 toggleButton.Font = Enum.Font.SourceSansBold
 toggleButton.TextSize = 20
 
+-- زر إظهار القائمة عند الإخفاء
+local showButton = Instance.new("TextButton")
+showButton.Size = UDim2.new(0, 50, 0, 50)
+showButton.Position = UDim2.new(0, 0, 0, 0)
+showButton.Text = ">"
+showButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+showButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+showButton.Font = Enum.Font.SourceSansBold
+showButton.TextSize = 20
+showButton.Parent = ScreenGui
+showButton.Visible = false
+
 toggleButton.MouseButton1Click:Connect(function()
     menuVisible = not menuVisible
     frame.Visible = menuVisible
+    showButton.Visible = not menuVisible
     toggleButton.Text = menuVisible and "إخفاء القائمة" or "إظهار القائمة"
 end)
+
+showButton.MouseButton1Click:Connect(function()
+    menuVisible = true
+    frame.Visible = true
+    showButton.Visible = false
+end)
+
+-- تشغيل دالة الهروب تلقائيًا
+task.spawn(autoEscape)
 
 -- إشعار عند تحميل السكريبت
 sendNotification("Aot Script", "Script loaded successfully by YOUDEAD1!", 5)
