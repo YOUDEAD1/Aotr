@@ -27,20 +27,23 @@ local function autoFarm()
                 local rootPart = enemy:FindFirstChild("HumanoidRootPart")
                 local nape = enemy:FindFirstChild("Nape") -- مؤخرة العنق كنقطة الضعف
                 if humanoid and rootPart and nape and humanoid.Health > 0 and enemy ~= player.Character then
-                    -- التحرك مباشرة إلى مؤخرة العنق
-                    player.Character.HumanoidRootPart.CFrame = nape.CFrame * CFrame.new(0, 0, 2) -- وضع اللاعب خلف العنق
+                    -- التحرك إلى موقع خلف العنق وضبط الاتجاه لمواجهته
+                    local playerRoot = player.Character.HumanoidRootPart
+                    playerRoot.CFrame = nape.CFrame * CFrame.new(0, 0, 5) -- خلف العنق بمسافة 5 وحدات
+                    playerRoot.CFrame = CFrame.lookAt(playerRoot.Position, nape.Position) -- توجيه اللاعب نحو العنق
+
                     -- تفعيل السيف
                     local tool = player.Character:FindFirstChildOfClass("Tool")
                     if tool then
                         tool:Activate()
-                        -- محاكاة الضربة على مؤخرة العنق
+                        -- إرسال طلب الضرر إلى الخادم
                         local attackRemote = game.ReplicatedStorage:FindFirstChild("Damage") or game.ReplicatedStorage:FindFirstChild("Attack")
                         if attackRemote then
-                            -- إرسال موقع العنق مع ضرر كافٍ للقتل
-                            attackRemote:FireServer(nape.Position, 1000) -- افتراض ضرر عالٍ لضمان القتل
+                            -- إرسال الجزء (Nape) بدلاً من الموقع فقط، مع ضرر كافٍ
+                            attackRemote:FireServer(nape, 1000) -- افتراض ضرر عالٍ لضمان القتل
                         end
                     end
-                    task.wait(0.05) -- تأخير بسيط بين الهجمات
+                    task.wait(0.05) -- تأخير بسيط للسماح بتسجيل الضربة
                 end
             end
         else
