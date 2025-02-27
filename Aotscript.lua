@@ -1,7 +1,7 @@
--- سكريبت محسن لـ AOTR (مدمج مع ميزات Tekkit Hub)
+-- سكريبت محسن لـ AOTR (إصلاح Tekkit Hub Loader)
 -- التاريخ: 28 فبراير 2025
 
-print("AOTR Script Starting - Tekkit Inspired - Grok @ xAI")
+print("AOTR Script Loader Starting - Grok @ xAI")
 
 -- تحقق من وجود اللاعب والشخصية
 local player = game.Players.LocalPlayer
@@ -19,163 +19,108 @@ if not humanoid or not rootPart then
 end
 print("Character loaded successfully!")
 
--- العثور على الشفرة الخاصة باللاعب (Blade)
-local playerRig = character:FindFirstChild(player.Name .. "_RIG") or character:FindFirstChild("RIG_" .. player.Name)
-local blade = nil
-if playerRig then
-    for i = 1, 7 do
-        local possibleBlade = playerRig:FindFirstChild("Blade_" .. i)
-        if possibleBlade then
-            blade = possibleBlade
-            break
+-- دالة لتحميل وتشغيل السكريبت الرئيسي
+local function runScript()
+    local success, result = pcall(function()
+        local scriptContent = game:HttpGet("https://raw.githubusercontent.com/zerunquist/TekkitAotr/refs/heads/main/main")
+        if scriptContent then
+            print("Successfully loaded script content from URL!")
+            return loadstring(scriptContent)()
+        else
+            warn("Failed to load script content: Content is empty.")
+            return nil
         end
-    end
-end
-if not blade then
-    warn("Player blade not found! Some attack features may not work correctly.")
-end
+    end)
 
--- وظيفة Auto-Farm (مستوحاة من OP Autofarm)
-print("Starting OP Autofarm...")
-while wait(0.1) do
-    -- الخطوة 1: البحث عن الـ Titans
-    local titansFolder = nil
-
-    -- الطريقة الأولى: البحث في Workspace.Titans
-    titansFolder = game.Workspace:FindFirstChild("Titans")
-    if titansFolder then
-        print("Found Titans folder in Workspace.Titans")
-    end
-
-    -- الطريقة الثانية: البحث عن أي نموذج يحتوي على كلمة "titan"
-    if not titansFolder then
-        print("Titans folder not found. Searching for Titans by name...")
-        for _, obj in pairs(game.Workspace:GetChildren()) do
-            if obj:IsA("Model") and obj.Name:lower():find("titan") then
-                titansFolder = obj.Parent
-                print("Found Titans folder by name: " .. tostring(titansFolder))
-                break
-            end
-        end
-    end
-
-    -- الطريقة الثالثة: البحث عن أي نموذج يحتوي على Humanoid
-    if not titansFolder then
-        print("Searching for Titans by Humanoid...")
-        for _, obj in pairs(game.Workspace:GetChildren()) do
-            if obj:IsA("Model") and obj:FindFirstChild("Humanoid") then
-                titansFolder = obj.Parent
-                print("Found Titans folder by Humanoid: " .. tostring(titansFolder))
-                break
-            end
-        end
-    end
-
-    if not titansFolder then
-        warn("No Titans found in Workspace! Please ensure Titans are spawned.")
-        continue
-    end
-
-    -- الخطوة 2: معالجة كل Titan
-    for _, titan in pairs(titansFolder:GetChildren()) do
-        if titan:IsA("Model") and titan:FindFirstChild("Humanoid") and titan.Humanoid.Health > 0 then
-            print("Found Titan: " .. titan.Name)
-
-            -- الخطوة 3: تحديد مرجع للانتقال
-            local titanRoot = titan:FindFirstChild("HumanoidRootPart")
-            if not titanRoot then
-                print("HumanoidRootPart not found for Titan: " .. titan.Name .. ". Waiting for it to load...")
-                wait(2)
-                titanRoot = titan:FindFirstChild("HumanoidRootPart")
-                if not titanRoot then
-                    for _, part in pairs(titan:GetChildren()) do
-                        if part:IsA("BasePart") then
-                            titanRoot = part
-                            print("Using alternative part as reference: " .. part.Name)
-                            break
-                        end
-                    end
-                    if not titanRoot then
-                        warn("No suitable part found for Titan: " .. titan.Name .. ". Skipping...")
-                        continue
-                    end
-                end
-            end
-
-            -- الخطوة 4: نقل اللاعب إلى الـ Titan
-            local successTeleport, teleportErr = pcall(function()
-                rootPart.CFrame = titanRoot.CFrame * CFrame.new(0, 5, -5)
-            end)
-            if successTeleport then
-                print("Teleported to Titan: " .. titan.Name)
-            else
-                warn("Failed to teleport to Titan: " .. tostring(teleportErr))
+    if success and result then
+        print("Tekkit Hub script executed successfully!")
+    else
+        warn("Failed to load or execute Tekkit Hub script: " .. tostring(result))
+        -- تشغيل سكريبت احتياطي بسيط
+        print("Starting backup Auto-Farm script...")
+        while wait(0.1) do
+            local titansFolder = game.Workspace:FindFirstChild("Titans")
+            if not titansFolder then
+                warn("No Titans found in Workspace! Please ensure Titans are spawned.")
                 continue
             end
 
-            -- الخطوة 5: محاكاة الهجوم (مستوحاة من Tekkit Hub)
-            local attackedSuccessfully = false
-            local attackEventNames = {
-                "BladeHit", "SwingBlade", "Attack", "Hit", "DamageEvent", "DealDamage", "BladeSwing", "Strike"
-            }
-            for _, eventName in ipairs(attackEventNames) do
-                local attackEvent = game:GetService("ReplicatedStorage"):FindFirstChild(eventName)
-                if attackEvent then
-                    print("Trying attack event: " .. eventName)
-                    local success, err = pcall(function()
-                        for _ = 1, 30 do -- كرر الهجوم 30 مرة
-                            attackEvent:FireServer(titan)
-                            wait(0.03)
+            for _, titan in pairs(titansFolder:GetChildren()) do
+                if titan:IsA("Model") and titan:FindFirstChild("Humanoid") and titan.Humanoid.Health > 0 then
+                    print("Found Titan: " .. titan.Name)
+                    local titanRoot = titan:FindFirstChild("HumanoidRootPart")
+                    if not titanRoot then
+                        wait(2)
+                        titanRoot = titan:FindFirstChild("HumanoidRootPart")
+                        if not titanRoot then
+                            for _, part in pairs(titan:GetChildren()) do
+                                if part:IsA("BasePart") then
+                                    titanRoot = part
+                                    break
+                                end
+                            end
+                            if not titanRoot then
+                                warn("No suitable part found for Titan: " .. titan.Name)
+                                continue
+                            end
                         end
+                    end
+
+                    -- نقل اللاعب إلى الـ Titan
+                    local successTeleport, teleportErr = pcall(function()
+                        rootPart.CFrame = titanRoot.CFrame * CFrame.new(0, 5, -5)
                     end)
-                    if success then
-                        print("Successfully attacked Titan with event: " .. eventName)
-                        attackedSuccessfully = true
-                        break
+                    if successTeleport then
+                        print("Teleported to Titan: " .. titan.Name)
                     else
-                        warn("Failed to attack with event " .. eventName .. ": " .. tostring(err))
+                        warn("Failed to teleport to Titan: " .. tostring(teleportErr))
+                        continue
+                    end
+
+                    -- هجوم مباشر
+                    local attackEventNames = {"BladeHit", "SwingBlade", "Attack"}
+                    local attacked = false
+                    for _, eventName in ipairs(attackEventNames) do
+                        local attackEvent = game:GetService("ReplicatedStorage"):FindFirstChild(eventName)
+                        if attackEvent then
+                            local success, err = pcall(function()
+                                for _ = 1, 30 do
+                                    attackEvent:FireServer(titan)
+                                    wait(0.03)
+                                end
+                            end)
+                            if success then
+                                print("Successfully attacked Titan with event: " .. eventName)
+                                attacked = true
+                                break
+                            else
+                                warn("Failed to attack with event " .. eventName .. ": " .. tostring(err))
+                            end
+                        end
+                    end
+
+                    if not attacked then
+                        local success, err = pcall(function()
+                            titan.Humanoid:TakeDamage(1000)
+                        end)
+                        if success then
+                            print("Successfully reduced Titan health with TakeDamage")
+                        else
+                            warn("Failed to reduce health: " .. tostring(err))
+                        end
                     end
                 end
-            end
-
-            -- الطريقة الاحتياطية: تقليل الصحة مباشرة
-            if not attackedSuccessfully then
-                print("Trying to reduce health with TakeDamage...")
-                local success, err = pcall(function()
-                    for _ = 1, 5 do
-                        titan.Humanoid:TakeDamage(1000)
-                        wait(0.05)
-                    end
-                end)
-                if success then
-                    print("Successfully reduced Titan health with TakeDamage")
-                    attackedSuccessfully = true
-                else
-                    warn("Failed to reduce health with TakeDamage: " .. tostring(err))
-                end
-            end
-
-            -- الطريقة الاحتياطية الثانية: تعيين الصحة إلى 0
-            if not attackedSuccessfully then
-                print("Trying to set health to 0...")
-                local success, err = pcall(function()
-                    titan.Humanoid.Health = 0
-                end)
-                if success then
-                    print("Successfully set Titan health to 0")
-                    attackedSuccessfully = true
-                else
-                    warn("Failed to set health to 0: " .. tostring(err))
-                end
-            end
-
-            if attackedSuccessfully then
-                print("Titan killed successfully: " .. titan.Name .. " (Treated as Nape Hit)!")
-            else
-                warn("All attack methods failed for Titan: " .. titan.Name)
             end
         end
     end
 end
 
-print("AOTR Script Loaded Successfully - Tekkit Inspired by Grok @ xAI")
+-- تشغيل السكريبت عند بدء اللعبة
+runScript()
+
+-- إعادة تشغيل السكريبت كل 5 ثوانٍ
+while true do
+    wait(5)
+    print("Attempting to reload Tekkit Hub script...")
+    runScript()
+end
