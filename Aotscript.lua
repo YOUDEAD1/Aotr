@@ -2,20 +2,16 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("AOTR Xeno Executor", "DarkTheme")
 
--- إعدادات المستخدم
+-- إعداد المتغيرات
 getgenv().AutoKill = false
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
 
--- توسيع hitbox
-local function findNape(hitFolder)
-    return hitFolder:FindFirstChild("Nape")
-end
-
+-- وظيفة لتوسيع hitbox النحر
 local function expandNapeHitbox(hitFolder)
-    local napeObject = findNape(hitFolder)
+    local napeObject = hitFolder:FindFirstChild("Nape")
     if napeObject then
         napeObject.Size = Vector3.new(105, 120, 100)
         napeObject.Transparency = 0.96
@@ -26,8 +22,9 @@ local function expandNapeHitbox(hitFolder)
     end
 end
 
-local function processTitans(titansBasePart)
-    for _, titan in ipairs(titansBasePart:GetChildren()) do
+-- وظيفة لمعالجة Titans
+local function processTitans()
+    for _, titan in ipairs(Workspace.Titans:GetChildren()) do
         local hitboxesFolder = titan:FindFirstChild("Hitboxes")
         if hitboxesFolder then
             local hitFolder = hitboxesFolder:FindFirstChild("Hit")
@@ -38,19 +35,14 @@ local function processTitans(titansBasePart)
     end
 end
 
--- زر القتل التلقائي
+-- زر Auto Kill
 local MainTab = Window:NewTab("Main")
 local MainSection = MainTab:NewSection("Auto Farm & Combat")
-MainSection:NewToggle("Auto Kill", "Kills titans automatically", function(state)
+MainSection:NewToggle("Auto Kill", "Automatically expand nape hitboxes", function(state)
     getgenv().AutoKill = state
-    if state then
-        while getgenv().AutoKill do
-            local titansBasePart = Workspace:FindFirstChild("Titans")
-            if titansBasePart then
-                processTitans(titansBasePart)
-            end
-            wait(1) -- انتظر ثانية بين كل عملية
-        end
+    while getgenv().AutoKill do
+        processTitans()
+        wait(1) -- انتظر 1 ثانية بين كل عملية
     end
 end)
 
