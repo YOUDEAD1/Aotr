@@ -86,19 +86,22 @@ CombatTab:NewToggle("Auto Combat", "Automatically attack Titans", function(state
     getgenv().autocombat = state
     while task.wait(0.1) do
         if not getgenv().autocombat then return end
-        local titan, closestdist = nil, nil
+        local titan, closestdist = nil, math.huge
         for _, opposition in next, workspace.Titans:GetChildren() do
-            local calcDist = (opposition.HumanoidRootPart.Position - Player.Character.HumanoidRootPart.Position).Magnitude
-            if calcDist <= 6000 then -- المسافة المحددة
-                if closestdist == nil or calcDist < closestdist then
-                    titan = opposition
-                    closestdist = calcDist
+            if opposition:FindFirstChild("HumanoidRootPart") then
+                local calcDist = (opposition.HumanoidRootPart.Position - Player.Character.HumanoidRootPart.Position).Magnitude
+                if calcDist <= 6000 then -- المسافة المحددة
+                    if calcDist < closestdist then
+                        titan = opposition
+                        closestdist = calcDist
+                    end
                 end
             end
         end
         if titan then
-            Player.Character.HumanoidRootPart.CFrame = CFrame.new(titan.HumanoidRootPart.Position)
+            Player.Character.HumanoidRootPart.CFrame = CFrame.new(titan.HumanoidRootPart.Position) -- التحرك نحو العملاق
             -- إضافة الكود للهجوم على العملاق
+            -- هنا يمكن أن تضيف الكود المطلوب للهجوم، مثل استخدام أسلحة أو مهارات
         end
     end
 end)
