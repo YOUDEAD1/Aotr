@@ -1,4 +1,4 @@
--- سكريبت متكامل لـ AOTR (محسن لجعل جسم الـ Titan بأكمله نقطة ضعف)
+-- سكريبت متكامل لـ AOTR (محسن لإصلاح الانتقال إلى الـ Titan)
 -- التاريخ: 28 فبراير 2025
 
 -- إعداد مكتبة واجهة المستخدم (UI Library)
@@ -40,8 +40,18 @@ AutoFarmSection:NewToggle("Enable Auto Farm", "Automatically kills Titans (entir
             -- استهداف الـ Titans في Workspace.Titans
             local titansFolder = game.Workspace:FindFirstChild("Titans")
             if not titansFolder then
-                warn("Titans folder not found in Workspace!")
-                return
+                warn("Titans folder not found in Workspace! Searching for alternative...")
+                -- بحث بديل عن الـ Titans في Workspace
+                for _, obj in pairs(game.Workspace:GetChildren()) do
+                    if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj.Name:lower():find("titan") then
+                        titansFolder = obj.Parent
+                        break
+                    end
+                end
+                if not titansFolder then
+                    warn("No Titans found in Workspace!")
+                    continue
+                end
             end
 
             for _, titan in pairs(titansFolder:GetChildren()) do
@@ -51,11 +61,25 @@ AutoFarmSection:NewToggle("Enable Auto Farm", "Automatically kills Titans (entir
                     -- تحديد موقع الـ Titan
                     local titanRoot = titan:FindFirstChild("HumanoidRootPart")
                     if not titanRoot then
-                        warn("HumanoidRootPart not found for Titan: " .. titan.Name)
-                        continue
+                        -- إذا لم يتم العثور على HumanoidRootPart، انتظر قليلاً ثم حاول مرة أخرى
+                        wait(0.5)
+                        titanRoot = titan:FindFirstChild("HumanoidRootPart")
+                        if not titanRoot then
+                            -- إذا لم يتم العثور عليه، استخدم أي جزء كمرجع
+                            for _, part in pairs(titan:GetChildren()) do
+                                if part:IsA("BasePart") then
+                                    titanRoot = part
+                                    break
+                                end
+                            end
+                            if not titanRoot then
+                                warn("No suitable part found for Titan: " .. titan.Name)
+                                continue
+                            end
+                        end
                     end
 
-                    -- تحديد حجم الـ Titan بناءً على ارتفاع HumanoidRootPart
+                    -- تحديد حجم الـ Titan بناءً على ارتفاع المرجع (titanRoot)
                     local heightOffset = 5 -- القيمة الافتراضية للارتفاع
                     local titanHeight = titanRoot.Position.Y - game.Workspace.Baseplate.Position.Y
                     if titanHeight > 20 then -- Titan كبير
@@ -66,8 +90,9 @@ AutoFarmSection:NewToggle("Enable Auto Farm", "Automatically kills Titans (entir
                         heightOffset = 5
                     end
 
-                    -- نقل اللاعب إلى موقع عام قرب الـ Titan (لا حاجة لاستهداف العنق بدقة)
+                    -- نقل اللاعب إلى موقع عام قرب الـ Titan
                     rootPart.CFrame = titanRoot.CFrame * CFrame.new(0, heightOffset, -5)
+                    print("Teleported to Titan: " .. titan.Name)
 
                     -- العثور على Nape (لاستخدامه كمرجع للهجوم فقط، لكن أي ضربة ستُعتبر على العنق)
                     local hitboxes = titan:FindFirstChild("Hitboxes")
@@ -97,7 +122,7 @@ AutoFarmSection:NewToggle("Enable Auto Farm", "Automatically kills Titans (entir
                         end
                         if not nape then
                             warn("No suitable hitbox found for Titan: " .. titan.Name)
-                            nape = titanRoot -- استخدم HumanoidRootPart كبديل
+                            nape = titanRoot -- استخدم titanRoot كبديل
                         end
                     end
 
@@ -255,4 +280,4 @@ VisualsSection:NewToggle("Enable Visuals", "Shows random text above player", fun
 end)
 
 -- رسالة ترحيب
-print("AOTR Script Loaded Successfully - Entire Titan as Nape by Grok @ xAI")
+print("AOTR Script Loaded Successfully - Fixed Teleport Issue by Grok @ xAI")
