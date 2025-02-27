@@ -7,114 +7,73 @@ local Camera = workspace.CurrentCamera
 
 -- إعدادات السكريبت
 local Aimbot = {
-    Settings = {
-        Enabled = false,           -- حالة السكريبت (معطل افتراضيًا)
-        TeamCheck = true,          -- التحقق من الفريق
-        AliveCheck = true,         -- التحقق من الحياة
-        LockPart = "Head",         -- الجزء المستهدف
-        Sensitivity = 0.1,         -- سرعة القفل (زيادة لتكون أكثر سلاسة)
-    },
-    FOVSettings = {
-        Enabled = true,
-        Radius = 90,               -- نطاق الرؤية
-    },
-    Locked = nil,                  -- الهدف المقفل
-    Running = false,               -- حالة التشغيل
-    Connections = {}               -- تخزين الاتصالات
+    Enabled = false,           -- حالة السكريبت
+    Locked = nil,              -- الهدف المقفل
+    Connections = {}           -- تخزين الاتصالات
 }
 
--- إنشاء واجهة المستخدم (GUI)
+-- إنشاء GUI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "AimbotGUI"
-ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 200, 0, 50)
+Frame.Size = UDim2.new(0, 150, 0, 40)
 Frame.Position = UDim2.new(0, 10, 0, 10) -- أعلى يسار
 Frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-Frame.BorderSizePixel = 0
 Frame.Parent = ScreenGui
 
 local StatusLabel = Instance.new("TextLabel")
 StatusLabel.Size = UDim2.new(1, 0, 1, 0)
-StatusLabel.Position = UDim2.new(0, 0, 0, 0)
-StatusLabel.Text = "Aimbot: OFF (Press P to toggle)"
+StatusLabel.Text = "Aimbot: OFF (P)"
 StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 StatusLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-StatusLabel.BorderSizePixel = 0
 StatusLabel.TextScaled = true
 StatusLabel.Parent = Frame
 
--- دالة لتحويل Vector3 إلى Vector2
-local function ConvertVector(Vector)
-    return Vector2.new(Vector.X, Vector.Y)
-end
-
--- إلغاء القفل
-local function CancelLock()
-    Aimbot.Locked = nil
-end
-
--- الحصول على أقرب عدو
-local function GetClosestPlayer()
-    local Settings = Aimbot.Settings
-    local LockPart = Settings.LockPart
-    local RequiredDistance = Aimbot.FOVSettings.Radius
-    Aimbot.Locked = nil
-
+-- دالة للحصول على أقرب عدو
+local function GetClosestEnemy()
+    local closestDistance = 90 -- نطاق الرؤية
+    local closestEnemy = nil
     local mousePos = UserInputService:GetMouseLocation()
 
     for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
+        if player ~= LocalPlayer and player.Team ~= LocalPlayer.Team then
             local character = player.Character
+            local head = character and character:FindFirstChild("Head")
             local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-            local targetPart = character and character:FindFirstChild(LockPart)
 
-            if character and humanoid and targetPart then
-                -- التحقق من الفريق
-                if Settings.TeamCheck and player.Team == LocalPlayer.Team then
-                    continue
-                end
-                -- التحقق من الحياة
-                if Settings.AliveCheck and humanoid.Health <= 0 then
-                    continue
-                end
+            if head and humanoid and humanoid.Health > 0 then
+                local headPos = head.Position
+                local screenPos, onScreen = Camera:WorldToViewportPoint(headPos)
+                local distance = (mousePos - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
 
-                local partPosition = targetPart.Position
-                local vector, onScreen = Camera:WorldToViewportPoint(partPosition)
-                local distance = (mousePos - ConvertVector(vector)).Magnitude
-
-                if distance < RequiredDistance and onScreen then
-                    RequiredDistance = distance
-                    Aimbot.Locked = player
+                if distance < closestDistance and onScreen then
+                    closestDistance = distance
+                    closestEnemy = player
                 end
             end
         end
     end
+    return closestEnemy
 end
 
--- دالة تشغيل Aimbot
+-- تشغيل Aimbot
 local function StartAimbot()
-    if not Aimbot.Settings.Enabled then return end
-    Aimbot.Running = true
     Aimbot.Connections.RenderStepped = RunService.RenderStepped:Connect(function()
-        if Aimbot.Settings.Enabled and Aimbot.Running then
-            GetClosestPlayer()
+        if Aimbot.Enabled then
+            Aimbot.Locked = GetClosestEnemy()
             if Aimbot.Locked then
-                local targetHead = Aimbot.Locked.Character:FindFirstChild(Aimbot.Settings.LockPart)
-                if targetHead then
-                    local targetPos = targetHead.Position
-                    Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, targetPos), Aimbot.Settings.Sensitivity)
-                end
+                local headPos = Aimbot.Locked.Character.Head.Position
+                Camera.CFrame = CFrame.new(Camera.CFrame.Position, headPos)
             end
         end
     end)
 end
 
--- دالة إيقاف Aimbot
+-- إيقاف Aimbot
 local function StopAimbot()
-    Aimbot.Running = false
-    CancelLock()
+    Aimbot.Locked = nil
     if Aimbot.Connections.RenderStepped then
         Aimbot.Connections.RenderStepped:Disconnect()
     end
@@ -123,27 +82,20 @@ end
 -- التحكم بمفتاح P
 UserInputService.InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.P then
-        Aimbot.Settings.Enabled = not Aimbot.Settings.Enabled
-        if Aimbot.Settings.Enabled then
+        Aimbot.Enabled = not Aimbot.Enabled
+        if Aimbot.Enabled then
             StartAimbot()
-            StatusLabel.Text = "Aimbot: ON (Press P to toggle)"
+            StatusLabel.Text = "Aimbot: ON (P)"
             StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
             print("Aimbot Enabled")
         else
             StopAimbot()
-            StatusLabel.Text = "Aimbot: OFF (Press P to toggle)"
+            StatusLabel.Text = "Aimbot: OFF (P)"
             StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
             print("Aimbot Disabled")
         end
     end
 end)
 
--- تنظيف السكريبت عند الخروج
-local function Exit()
-    StopAimbot()
-    ScreenGui:Destroy()
-end
-
 -- بدء السكريبت
-print("Aimbot GUI Loaded. Press P to toggle.")
-return Aimbot
+print("Aimbot Loaded. Press P to toggle.")
