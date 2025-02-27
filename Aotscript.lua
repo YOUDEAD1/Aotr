@@ -1,106 +1,118 @@
-local game, workspace = game, workspace
-local getrawmetatable, getmetatable, setmetatable, pcall, getgenv, next, tick = getrawmetatable, getmetatable, setmetatable, pcall, getgenv, next, tick
-local Vector2new, Vector3zero, CFramenew, Color3fromRGB, Color3fromHSV, Drawingnew, TweenInfonew = Vector2.new, Vector3.zero, CFrame.new, Color3.fromRGB, Color3.fromHSV, Drawing.new, TweenInfo.new
-local getupvalue, mousemoverel, tablefind, tableremove, stringlower, stringsub, mathclamp = debug.getupvalue, mousemoverel or (Input and Input.MouseMove), table.find, table.remove, string.lower, string.sub, math.clamp
-
-local GetService = game.GetService
-local RunService = GetService(game, "RunService")
-local UserInputService = GetService(game, "UserInputService")
-local Players = GetService(game, "Players")
+-- تعريف الخدمات
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
-local ExunysDeveloperAimbot = {
-    Settings = {
-        Enabled = true,
-        TeamCheck = true, -- تفعيل فحص الفريق لمنع التصويب على الحلفاء
-        AliveCheck = true,
-        WallCheck = false,
-        LockMode = 1,
-        LockPart = "Head",
-        TriggerKey = Enum.UserInputType.MouseButton2,
-        Toggle = false
-    },
-    FOVSettings = {
-        Enabled = true,
-        Radius = 90
-    },
-    Blacklisted = {}
+-- إعدادات السكريبت
+local Aimbot = {
+    Enabled = false,           -- حالة السكريبت
+    Locked = nil,              -- الهدف المقفل
+    Connections = {},          -- تخزين الاتصالات
+    WallCheck = false          -- التحقق من الجدران (false = يمكن ضرب عدو وراء جدار)
 }
 
-local function GetClosestPlayer()
-    local RequiredDistance = ExunysDeveloperAimbot.FOVSettings.Radius or 2000
-    local ClosestPlayer = nil
+-- إنشاء GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AimbotGUI"
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
-    for _, Player in next, Players:GetPlayers() do
-        if Player ~= LocalPlayer then
-            local Character = Player.Character
-            local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
-            local Head = Character and Character:FindFirstChild(ExunysDeveloperAimbot.Settings.LockPart)
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 150, 0, 40)
+Frame.Position = UDim2.new(0, 10, 0, 10) -- أعلى يسار
+Frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Frame.Parent = ScreenGui
 
-            if Character and Humanoid and Head then
-                -- منع التصويب على الحلفاء
-                if ExunysDeveloperAimbot.Settings.TeamCheck and Player.Team == LocalPlayer.Team then
-                    continue
-                end
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Size = UDim2.new(1, 0, 1, 0)
+StatusLabel.Text = "Aimbot: OFF (P)"
+StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+StatusLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+StatusLabel.TextScaled = true
+StatusLabel.Parent = Frame
 
-                if ExunysDeveloperAimbot.Settings.AliveCheck and Humanoid.Health <= 0 then
-                    continue
-                end
+-- دالة للحصول على أقرب عدو
+local function GetClosestEnemy()
+    local closestDistance = 90 -- نطاق الرؤية
+    local closestEnemy = nil
+    local mousePos = UserInputService:GetMouseLocation()
 
-                local ScreenPosition, OnScreen = Camera:WorldToViewportPoint(Head.Position)
-                local Distance = (UserInputService:GetMouseLocation() - Vector2new(ScreenPosition.X, ScreenPosition.Y)).Magnitude
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Team ~= LocalPlayer.Team then
+            local character = player.Character
+            local head = character and character:FindFirstChild("Head")
+            local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 
-                if Distance < RequiredDistance and OnScreen then
-                    RequiredDistance = Distance
-                    ClosestPlayer = Player
+            if head and humanoid and humanoid.Health > 0 then
+                local headPos = head.Position
+                local screenPos, onScreen = Camera:WorldToViewportPoint(headPos)
+                local distance = (mousePos - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
+
+                -- إذا WallCheck مفعل، تحقق من الجدران
+                if Aimbot.WallCheck then
+                    local ray = Ray.new(Camera.CFrame.Position, (headPos - Camera.CFrame.Position).Unit * 1000)
+                    local hit = workspace:FindPartOnRayWithIgnoreList(ray, {LocalPlayer.Character})
+                    if hit and hit:IsDescendantOf(character) then
+                        if distance < closestDistance and onScreen then
+                            closestDistance = distance
+                            closestEnemy = player
+                        end
+                    end
+                else
+                    -- تجاهل الجدران إذا كان WallCheck معطل
+                    if distance < closestDistance and onScreen then
+                        closestDistance = distance
+                        closestEnemy = player
+                    end
                 end
             end
         end
     end
-
-    return ClosestPlayer
+    return closestEnemy
 end
 
-local Running = false
-
-local function ToggleAimbot()
-    Running = not Running
-    if not Running then
-        ExunysDeveloperAimbot.Locked = nil
-    end
-end
-
-UserInputService.InputBegan:Connect(function(Input, Processed)
-    if Processed then return end
-
-    -- مفتاح تشغيل/إيقاف السكربت
-    if Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode == Enum.KeyCode.P then
-        ToggleAimbot()
-    end
-
-    if Input.UserInputType == ExunysDeveloperAimbot.Settings.TriggerKey then
-        Running = true
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(Input)
-    if Input.UserInputType == ExunysDeveloperAimbot.Settings.TriggerKey then
-        Running = false
-        ExunysDeveloperAimbot.Locked = nil
-    end
-end)
-
-RunService.RenderStepped:Connect(function()
-    if Running and ExunysDeveloperAimbot.Settings.Enabled then
-        local Target = GetClosestPlayer()
-        if Target and Target.Character then
-            local Head = Target.Character:FindFirstChild(ExunysDeveloperAimbot.Settings.LockPart)
-            if Head then
-                Camera.CFrame = CFramenew(Camera.CFrame.Position, Head.Position)
+-- تشغيل Aimbot
+local function StartAimbot()
+    Aimbot.Connections.RenderStepped = RunService.RenderStepped:Connect(function()
+        if Aimbot.Enabled then
+            local target = GetClosestEnemy() -- تحديث الهدف في كل إطار
+            if target then
+                local headPos = target.Character.Head.Position
+                Camera.CFrame = CFrame.new(Camera.CFrame.Position, headPos)
+                Aimbot.Locked = target -- تحديث الهدف المقفل
+            else
+                Aimbot.Locked = nil -- إلغاء القفل إذا لم يكن هناك هدف
             end
+        end
+    end)
+end
+
+-- إيقاف Aimbot
+local function StopAimbot()
+    Aimbot.Locked = nil
+    if Aimbot.Connections.RenderStepped then
+        Aimbot.Connections.RenderStepped:Disconnect()
+    end
+end
+
+-- التحكم بمفتاح P
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.P then
+        Aimbot.Enabled = not Aimbot.Enabled
+        if Aimbot.Enabled then
+            StartAimbot()
+            StatusLabel.Text = "Aimbot: ON (P)"
+            StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+            print("Aimbot Enabled")
+        else
+            StopAimbot()
+            StatusLabel.Text = "Aimbot: OFF (P)"
+            StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            print("Aimbot Disabled")
         end
     end
 end)
 
-return ExunysDeveloperAimbot
+-- بدء السكريبت
+print("Aimbot Loaded. Press P to toggle.")
