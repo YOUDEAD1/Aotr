@@ -22,7 +22,7 @@ local Workspace = game:GetService("Workspace")
 
 --  توسيع هيت بوكس نقطة النحر
 local function findNape(hitFolder)
-    return hitFolder:FindFirstChild("Nape")
+    return hitFolder and hitFolder:FindFirstChild("Nape")
 end
 
 local function expandNapeHitbox(hitFolder)
@@ -55,9 +55,9 @@ end
 MainSection:NewToggle("Auto Kill", "Kills titans automatically", function(state)
     getgenv.AutoKill = state
     if state then
-        local titansBasePart = Workspace:FindFirstChild("Titans")
         task.spawn(function()
             while getgenv.AutoKill do
+                local titansBasePart = Workspace:FindFirstChild("Titans")
                 processTitans(titansBasePart)
                 task.wait(1)
             end
@@ -70,9 +70,12 @@ MainSection:NewToggle("Auto Escape", "Auto presses QTE buttons", function(state)
     getgenv.AutoEscape = state
     task.spawn(function()
         while getgenv.AutoEscape do
-            for _, v in pairs(LocalPlayer.PlayerGui.Interface.Buttons:GetChildren()) do
-                if v and v:IsA("TextButton") then -- التحقق من نوع العنصر
-                    VIM:SendKeyEvent(true, string.lower(v.Text), false, game) -- استخدام النص كحرف
+            local buttons = LocalPlayer.PlayerGui:FindFirstChild("Interface") and LocalPlayer.PlayerGui.Interface:FindFirstChild("Buttons")
+            if buttons then
+                for _, v in pairs(buttons:GetChildren()) do
+                    if v and v:IsA("TextButton") then
+                        VIM:SendKeyEvent(true, string.lower(v.Text), false, game)
+                    end
                 end
             end
             task.wait(0.3)
@@ -91,7 +94,7 @@ MainSection:NewToggle("Auto Replace Blade", "Replaces broken blade automatically
                     if v:IsA("Tool") then
                         for _, v2 in pairs(v:GetChildren()) do
                             if v2.Name == "Blade_1" and v2:GetAttribute("Broken") == true then
-                                VIM:SendKeyEvent(true, "r", false, game) -- استخدام 'r'
+                                VIM:SendKeyEvent(true, "r", false, game)
                             end
                         end
                     end
@@ -108,8 +111,8 @@ MainSection:NewToggle("Auto Gas Refill", "Refills gas automatically", function(s
     task.spawn(function()
         while getgenv.AutoGas do
             local gasMeter = LocalPlayer.PlayerGui:FindFirstChild("GasMeter")
-            if gasMeter and gasMeter.Value <= 20 then -- زيادة قيمة الغاز
-                VIM:SendKeyEvent(true, "g", false, game) -- استخدام 'g'
+            if gasMeter and gasMeter.Value <= 20 then
+                VIM:SendKeyEvent(true, "g", false, game)
             end
             task.wait(1)
         end
