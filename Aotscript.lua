@@ -12,7 +12,6 @@ local Aimbot = {
     Connections = {},          -- تخزين الاتصالات
     ESPEnabled = true,         -- تفعيل ESP
     Highlights = {},           -- تخزين تسليط الضوء
-    Wallbang = true            -- تفعيل Wallbang
 }
 
 -- إنشاء GUI
@@ -86,25 +85,23 @@ local function GetClosestEnemy()
     return closestEnemy
 end
 
--- دالة Wallbang (محاكاة اختراق الجدران)
-local function Wallbang(target)
-    if not Aimbot.Wallbang or not target then return end
+-- دالة Wallbang (إطلاق النار عبر الجدران)
+local function FireThroughWalls(target)
     local character = LocalPlayer.Character
     local tool = character and character:FindFirstChildWhichIsA("Tool")
-    if tool then
-        -- محاكاة إطلاق الرصاص عبر الجدار
+    if tool and target then
         local headPos = target.Character.Head.Position
-        local direction = (headPos - Camera.CFrame.Position).Unit
-        local ray = Ray.new(Camera.CFrame.Position, direction * 1000)
-        local hit, position = workspace:FindPartOnRay(ray, character) -- تجاهل شخصيتك فقط
-
-        -- إذا أصاب العدو، حاكي الضرر
-        if hit and hit:IsDescendantOf(target.Character) then
-            local humanoid = target.Character:FindFirstChildOfClass("Humanoid")
-            if humanoid then
-                -- محاكاة الضرر (قد تحتاج إلى تعديل حسب اللعبة)
-                humanoid:TakeDamage(10) -- قيمة الضرر (قابلة للتعديل)
-            end
+        -- توجيه السلاح نحو الهدف
+        local handle = tool:FindFirstChild("Handle") or tool:FindFirstChildWhichIsA("BasePart")
+        if handle then
+            handle.CFrame = CFrame.new(handle.Position, headPos)
+        end
+        -- محاكاة إطلاق النار
+        local fireFunction = tool:FindFirstChild("Fire") or tool:FindFirstChild("Activate")
+        if fireFunction and fireFunction:IsA("RemoteEvent") then
+            fireFunction:FireServer(headPos) -- إرسال موقع الهدف إلى السيرفر
+        elseif tool.Activate then
+            tool:Activate() -- تفعيل السلاح يدويًا
         end
     end
 end
@@ -118,7 +115,7 @@ local function StartAimbot()
                 local headPos = target.Character.Head.Position
                 Camera.CFrame = CFrame.new(Camera.CFrame.Position, headPos)
                 Aimbot.Locked = target
-                Wallbang(target) -- محاولة ضرب العدو عبر الجدار
+                FireThroughWalls(target) -- إطلاق النار عبر الجدران
             else
                 Aimbot.Locked = nil
             end
@@ -164,4 +161,4 @@ UserInputService.InputBegan:Connect(function(input)
 end)
 
 -- بدء السكريبت
-print("Aimbot Loaded. Press P to toggle.")
+print("Aimbot Loaded. Press P to toggle. Equip a weapon to shoot through walls!")
