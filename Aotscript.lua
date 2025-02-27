@@ -3,26 +3,17 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Librar
 
 local Player = game.Players.LocalPlayer
 local workspace = game:GetService("Workspace")
-local VIM = game:GetService("VirtualInputManager")
 
 -- إنشاء نافذة جديدة
 local Window = KavoUI.CreateLib("Game Script", "Grape")
 
--- تبويب Auto Farm
-local AutoFarmTab = Window:NewTab("Auto Farm")
+-- تبويب Expand Nape
 local ExpandNapeTab = Window:NewTab("Expand Nape")
-local AutoEscapeTab = Window:NewTab("Auto Escape")
-local AutoRepairTab = Window:NewTab("Auto Repair")
-local CombatTab = Window:NewTab("Combat")
 
 -- سكربت توسيع ناب
 ExpandNapeTab:NewButton("Expand Nape", "Expand the Nape hitbox of Titans", function()
-    local function findNape(hitFolder)
-        return hitFolder:FindFirstChild("Nape")
-    end
-
     local function expandNapeHitbox(hitFolder)
-        local napeObject = findNape(hitFolder)
+        local napeObject = hitFolder:FindFirstChild("Nape")
         if napeObject then
             napeObject.Size = Vector3.new(105, 120, 100)
             napeObject.Transparency = 0.96
@@ -33,7 +24,8 @@ ExpandNapeTab:NewButton("Expand Nape", "Expand the Nape hitbox of Titans", funct
         end
     end
 
-    local function processTitans(titansBasePart)
+    local titansBasePart = workspace:FindFirstChild("Titans")
+    if titansBasePart then
         for _, titan in ipairs(titansBasePart:GetChildren()) do
             local hitboxesFolder = titan:FindFirstChild("Hitboxes")
             if hitboxesFolder then
@@ -44,12 +36,10 @@ ExpandNapeTab:NewButton("Expand Nape", "Expand the Nape hitbox of Titans", funct
             end
         end
     end
-
-    local titansBasePart = workspace:FindFirstChild("Titans")
-    if titansBasePart then
-        processTitans(titansBasePart)
-    end
 end)
+
+-- تبويب Auto Escape
+local AutoEscapeTab = Window:NewTab("Auto Escape")
 
 -- سكربت أوتو إيسكايب
 AutoEscapeTab:NewToggle("Auto Escape", "Automatically escape", function(state)
@@ -57,12 +47,15 @@ AutoEscapeTab:NewToggle("Auto Escape", "Automatically escape", function(state)
     while task.wait(0.3) do
         if not getgenv().autoescape then return end
         for _, v in pairs(Player.PlayerGui.Interface.Buttons:GetChildren()) do
-            if v then
-                VIM:SendKeyEvent(true, string.sub(tostring(v.Name), 1, 1), false, game)
+            if v and v:IsA("GuiButton") then
+                v:Click() -- محاكاة النقر على الزر
             end
         end
     end
 end)
+
+-- تبويب Auto Repair
+local AutoRepairTab = Window:NewTab("Auto Repair")
 
 -- سكريبت أوتو إصلاح الأسلحة
 AutoRepairTab:NewToggle("Auto Repair", "Automatically repair weapons", function(state)
@@ -73,32 +66,10 @@ AutoRepairTab:NewToggle("Auto Repair", "Automatically repair weapons", function(
             if v.Name == "RightHand" or v.Name == "LeftHand" then
                 for _, v2 in pairs(v:GetChildren()) do
                     if v2.Name == "Blade_1" and v2:GetAttribute("Broken") == true then
-                        VIM:SendKeyEvent(true, Enum.KeyCode.R, false, game) -- مفتاح R لإصلاح
+                        v2:Repair() -- تأكد من وجود دالة الإصلاح المناسبة
                     end
                 end
             end
-        end
-    end
-end)
-
--- سكريبت القتال
-CombatTab:NewToggle("Auto Combat", "Automatically attack Titans", function(state)
-    getgenv().autocombat = state
-    while task.wait(0.1) do
-        if not getgenv().autocombat then return end
-        local titan, closestdist = nil, math.huge
-        for _, opposition in pairs(workspace.Titans:GetChildren()) do
-            if opposition:FindFirstChild("HumanoidRootPart") then
-                local calcDist = (opposition.HumanoidRootPart.Position - Player.Character.HumanoidRootPart.Position).Magnitude
-                if calcDist <= 6000 and calcDist < closestdist then
-                    titan = opposition
-                    closestdist = calcDist
-                end
-            end
-        end
-        if titan then
-            Player.Character.HumanoidRootPart.CFrame = CFrame.new(titan.HumanoidRootPart.Position) -- التحرك نحو العملاق
-            -- هنا يجب أن تضيف الكود للهجوم على العملاق
         end
     end
 end)
