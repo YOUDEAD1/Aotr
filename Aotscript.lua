@@ -1,10 +1,7 @@
--- تحميل Kavo UI Library
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("AOTR Xeno Executor", "DarkTheme")
-
--- الصفحة الرئيسية
-local MainTab = Window:NewTab("Main")
-local MainSection = MainTab:NewSection("Auto Farm & Combat")
+-- إعدادات اللاعب
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
 
 -- الوظائف العامة
 getgenv().AutoKill = false
@@ -12,11 +9,6 @@ getgenv().AutoEscape = false
 getgenv().AutoReplaceBlade = false
 getgenv().AutoGas = false
 getgenv().SpeedBoost = false
-getgenv().FOVChanger = false
-
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local Workspace = game:GetService("Workspace")
 
 -- توسيع هيت بوكس نقطة النحر
 local function expandNapeHitbox(hitFolder)
@@ -46,81 +38,57 @@ local function processTitans()
     end
 end
 
--- إضافة زر Auto Kill في GUI
-MainSection:NewToggle("Auto Kill", "Kills titans automatically", function(state)
-    getgenv().AutoKill = state
+-- تفعيل أو تعطيل Auto Kill
+function toggleAutoKill()
+    getgenv().AutoKill = not getgenv().AutoKill
     while getgenv().AutoKill do
         processTitans()
         wait(1)
     end
-end)
+end
 
--- أوتو إسكايب
-MainSection:NewToggle("Auto Escape", "Auto presses QTE buttons", function(state)
-    getgenv().AutoEscape = state
-    spawn(function()
-        while getgenv().AutoEscape do
-            for _, button in pairs(LocalPlayer.PlayerGui.Interface.Buttons:GetChildren()) do
-                if button then
-                    button:Click() -- افترض أن الزر يمكن النقر عليه
-                end
+-- تفعيل أو تعطيل Auto Escape
+function toggleAutoEscape()
+    getgenv().AutoEscape = not getgenv().AutoEscape
+    while getgenv().AutoEscape do
+        for _, button in pairs(LocalPlayer.PlayerGui.Interface.Buttons:GetChildren()) do
+            if button then
+                button:Click() -- افترض أن الزر يمكن النقر عليه
             end
-            wait(0.3)
         end
-    end)
-end)
+        wait(0.3)
+    end
+end
 
--- أوتو استبدال السيف
-MainSection:NewToggle("Auto Replace Blade", "Replaces broken blade automatically", function(state)
-    getgenv().AutoReplaceBlade = state
-    spawn(function()
-        while getgenv().AutoReplaceBlade do
-            for _, tool in pairs(LocalPlayer.Character:GetChildren()) do
-                if tool:IsA("Tool") and tool:GetAttribute("Broken") then
-                    keypress(0x52) -- مفتاح R
-                end
+-- تفعيل أو تعطيل Auto Replace Blade
+function toggleAutoReplaceBlade()
+    getgenv().AutoReplaceBlade = not getgenv().AutoReplaceBlade
+    while getgenv().AutoReplaceBlade do
+        for _, tool in pairs(LocalPlayer.Character:GetChildren()) do
+            if tool:IsA("Tool") and tool:GetAttribute("Broken") then
+                keypress(0x52) -- مفتاح R
             end
-            wait(1)
         end
-    end)
-end)
+        wait(1)
+    end
+end
 
--- أوتو تعبئة الغاز
-MainSection:NewToggle("Auto Gas Refill", "Refills gas automatically", function(state)
-    getgenv().AutoGas = state
-    spawn(function()
-        while getgenv().AutoGas do
-            local gasMeter = LocalPlayer.PlayerGui:FindFirstChild("GasMeter")
-            if gasMeter and gasMeter.Value <= 10 then
-                keypress(0x47) -- مفتاح G
-            end
-            wait(1)
+-- تفعيل أو تعطيل Auto Gas
+function toggleAutoGas()
+    getgenv().AutoGas = not getgenv().AutoGas
+    while getgenv().AutoGas do
+        local gasMeter = LocalPlayer.PlayerGui:FindFirstChild("GasMeter")
+        if gasMeter and gasMeter.Value <= 10 then
+            keypress(0x47) -- مفتاح G
         end
-    end)
-end)
+        wait(1)
+    end
+end
 
--- سبيد بوست
-MainSection:NewToggle("Speed Boost", "Increases movement speed", function(state)
-    getgenv().SpeedBoost = state
-    spawn(function()
-        while getgenv().SpeedBoost do
-            LocalPlayer.Character.Humanoid.WalkSpeed = 50
-            wait(1)
-        end
-        LocalPlayer.Character.Humanoid.WalkSpeed = 16
-    end)
-end)
+-- ربط الوظائف بالأزرار
+toggleAutoKill() -- لتفعيل/تعطيل Auto Kill
+toggleAutoEscape() -- لتفعيل/تعطيل Auto Escape
+toggleAutoReplaceBlade() -- لتفعيل/تعطيل Auto Replace Blade
+toggleAutoGas() -- لتفعيل/تعطيل Auto Gas
 
--- FOV Changer
-MainSection:NewToggle("FOV Changer", "Expands camera field of view", function(state)
-    getgenv().FOVChanger = state
-    spawn(function()
-        while getgenv().FOVChanger do
-            Workspace.CurrentCamera.FieldOfView = 120
-            wait(1)
-        end
-        Workspace.CurrentCamera.FieldOfView = 70
-    end)
-end)
-
-print("✅ AOTR Xeno GUI Loaded!")
+print("✅ AOTR Script Loaded!")
