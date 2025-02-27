@@ -98,7 +98,7 @@ CombatTab:NewToggle("Auto Combat", "Automatically attack Titans", function(state
         end
         if titan then
             Player.Character.HumanoidRootPart.CFrame = CFrame.new(titan.HumanoidRootPart.Position) -- التحرك نحو العملاق
-            -- إضافة الكود للهجوم على العملاق هنا
+            -- هنا يجب أن تضيف الكود للهجوم على العملاق
         end
     end
 end)
