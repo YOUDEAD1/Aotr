@@ -1,4 +1,4 @@
--- تعريف الخدما
+-- تعريف الخدمات
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -8,7 +8,7 @@ local Camera = workspace.CurrentCamera
 -- إعدادات السكريبت
 local Aimbot = {
     Settings = {
-        Enabled = false,           -- حالة السكريبت (معطل افتراضيًا حتى تفعيله عبر GUI)
+        Enabled = false,           -- حالة السكريبت (معطل افتراضيًا)
         TeamCheck = true,          -- التحقق من الفريق
         AliveCheck = true,         -- التحقق من الحياة
         LockPart = "Head",         -- الجزء المستهدف
@@ -29,36 +29,21 @@ ScreenGui.Name = "AimbotGUI"
 ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
 local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 200, 0, 100)
-Frame.Position = UDim2.new(0.5, -100, 0.5, -50)
+Frame.Size = UDim2.new(0, 200, 0, 50)
+Frame.Position = UDim2.new(0, 10, 0, 10) -- أعلى يسار (10 من اليسار، 10 من الأعلى)
 Frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 Frame.BorderSizePixel = 0
 Frame.Parent = ScreenGui
 
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.Position = UDim2.new(0, 0, 0, 0)
-Title.Text = "Aimbot Control"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Title.BorderSizePixel = 0
-Title.Parent = Frame
-
-local EnableButton = Instance.new("TextButton")
-EnableButton.Size = UDim2.new(0, 80, 0, 30)
-EnableButton.Position = UDim2.new(0, 10, 0, 40)
-EnableButton.Text = "Enable"
-EnableButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-EnableButton.BackgroundColor3 = Color3.fromRGB(0, 120, 0)
-EnableButton.Parent = Frame
-
-local DisableButton = Instance.new("TextButton")
-DisableButton.Size = UDim2.new(0, 80, 0, 30)
-DisableButton.Position = UDim2.new(0, 110, 0, 40)
-DisableButton.Text = "Disable"
-DisableButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-DisableButton.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
-DisableButton.Parent = Frame
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Size = UDim2.new(1, 0, 1, 0)
+StatusLabel.Position = UDim2.new(0, 0, 0, 0)
+StatusLabel.Text = "Aimbot: OFF (Press P to toggle)"
+StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+StatusLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+StatusLabel.BorderSizePixel = 0
+StatusLabel.TextScaled = true
+StatusLabel.Parent = Frame
 
 -- دالة لتحويل Vector3 إلى Vector2
 local function ConvertVector(Vector)
@@ -130,17 +115,22 @@ local function StopAimbot()
     end
 end
 
--- ربط الأزرار بوظائف
-EnableButton.MouseButton1Click:Connect(function()
-    Aimbot.Settings.Enabled = true
-    StartAimbot()
-    print("Aimbot Enabled")
-end)
-
-DisableButton.MouseButton1Click:Connect(function()
-    Aimbot.Settings.Enabled = false
-    StopAimbot()
-    print("Aimbot Disabled")
+-- التحكم بمفتاح P
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.P then
+        Aimbot.Settings.Enabled = not Aimbot.Settings.Enabled
+        if Aimbot.Settings.Enabled then
+            StartAimbot()
+            StatusLabel.Text = "Aimbot: ON (Press P to toggle)"
+            StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+            print("Aimbot Enabled")
+        else
+            StopAimbot()
+            StatusLabel.Text = "Aimbot: OFF (Press P to toggle)"
+            StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            print("Aimbot Disabled")
+        end
+    end
 end)
 
 -- تنظيف السكريبت عند الخروج
@@ -150,5 +140,5 @@ local function Exit()
 end
 
 -- بدء السكريبت
-print("Aimbot GUI Loaded. Use the buttons to control.")
+print("Aimbot GUI Loaded. Press P to toggle.")
 return Aimbot
