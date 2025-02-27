@@ -1,4 +1,4 @@
--- سكريبت متكامل لـ AOTR (محسن بناءً على بنية اللعبة)
+-- سكريبت متكامل لـ AOTR (محسن لجعل جسم الـ Titan بأكمله نقطة ضعف)
 -- التاريخ: 28 فبراير 2025
 
 -- إعداد مكتبة واجهة المستخدم (UI Library)
@@ -11,12 +11,28 @@ local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 local rootPart = character:WaitForChild("HumanoidRootPart")
 
+-- العثور على الشفرة الخاصة باللاعب (Blade)
+local playerRig = character:FindFirstChild(player.Name .. "_RIG") or character:FindFirstChild("RIG_" .. player.Name)
+local blade = nil
+if playerRig then
+    for i = 1, 7 do
+        local possibleBlade = playerRig:FindFirstChild("Blade_" .. i)
+        if possibleBlade then
+            blade = possibleBlade
+            break
+        end
+    end
+end
+if not blade then
+    warn("Player blade not found! Some features may not work correctly.")
+end
+
 -- القسم الأول: Auto-Farm (محسن لقتل الـ Titans)
 local AutoFarmTab = Window:NewTab("Auto Farm")
 local AutoFarmSection = AutoFarmTab:NewSection("Auto Farm Controls")
 local AutoFarmEnabled = false
 
-AutoFarmSection:NewToggle("Enable Auto Farm", "Automatically kills Titans", function(state)
+AutoFarmSection:NewToggle("Enable Auto Farm", "Automatically kills Titans (entire body as weak point)", function(state)
     AutoFarmEnabled = state
     if AutoFarmEnabled then
         print("Auto Farm Enabled!")
@@ -31,41 +47,88 @@ AutoFarmSection:NewToggle("Enable Auto Farm", "Automatically kills Titans", func
             for _, titan in pairs(titansFolder:GetChildren()) do
                 if titan:IsA("Model") and titan:FindFirstChild("Humanoid") and titan.Humanoid.Health > 0 then
                     print("Found Titan: " .. titan.Name)
-                    -- نقل اللاعب إلى موقع الـ Titan
+
+                    -- تحديد موقع الـ Titan
                     local titanRoot = titan:FindFirstChild("HumanoidRootPart")
-                    if titanRoot then
-                        rootPart.CFrame = titanRoot.CFrame * CFrame.new(0, 0, -5)
+                    if not titanRoot then
+                        warn("HumanoidRootPart not found for Titan: " .. titan.Name)
+                        continue
                     end
 
-                    -- استهداف نقاط الضعف (Hitboxes.Hit)
+                    -- تحديد حجم الـ Titan بناءً على ارتفاع HumanoidRootPart
+                    local heightOffset = 5 -- القيمة الافتراضية للارتفاع
+                    local titanHeight = titanRoot.Position.Y - game.Workspace.Baseplate.Position.Y
+                    if titanHeight > 20 then -- Titan كبير
+                        heightOffset = 13
+                    elseif titanHeight > 10 then -- Titan متوسط
+                        heightOffset = 8
+                    else -- Titan صغير
+                        heightOffset = 5
+                    end
+
+                    -- نقل اللاعب إلى موقع عام قرب الـ Titan (لا حاجة لاستهداف العنق بدقة)
+                    rootPart.CFrame = titanRoot.CFrame * CFrame.new(0, heightOffset, -5)
+
+                    -- العثور على Nape (لاستخدامه كمرجع للهجوم فقط، لكن أي ضربة ستُعتبر على العنق)
                     local hitboxes = titan:FindFirstChild("Hitboxes")
+                    local nape = nil
                     if hitboxes then
                         for _, hit in pairs(hitboxes:GetChildren()) do
-                            if hit.Name == "Hit" then
-                                -- محاكاة الهجوم على نقطة الضعف
-                                local success, err = pcall(function()
-                                    -- افتراض حدث هجوم في ReplicatedStorage
-                                    local attackEvent = game:GetService("ReplicatedStorage"):FindFirstChild("Hit") or
-                                                        game:GetService("ReplicatedStorage"):FindFirstChild("DamageEvent")
-                                    if attackEvent then
-                                        for _ = 1, 5 do -- كرر الهجوم 5 مرات لضمان القتل
-                                            attackEvent:FireServer(titan, hit)
-                                            wait(0.05)
-                                        end
-                                    else
-                                        -- إذا لم يتم العثور على الحدث، حاول تقليل الصحة مباشرة
-                                        titan.Humanoid.Health = titan.Humanoid.Health - 100
-                                    end
-                                end)
-                                if not success then
-                                    warn("Failed to attack Titan: " .. tostring(err))
-                                else
-                                    print("Attacked Titan: " .. titan.Name .. " at Hitbox: " .. hit.Name)
+                            local hitName = hit.Name:lower()
+                            if (hitName:find("nape") or hitName:find("neckhit")) and not hitName:find("fake") then
+                                nape = hit
+                                break
+                            end
+                        end
+                        if not nape then
+                            for _, hit in pairs(hitboxes:GetChildren()) do
+                                local hitName = hit.Name:lower()
+                                if hitName:find("hit") and not hitName:find("fake") and not hitName:find("head") then
+                                    nape = hit
+                                    break
                                 end
                             end
                         end
+                    end
+                    if not nape then
+                        nape = titan:FindFirstChild("Head") or titan:FindFirstChild("HumanoidRootPart")
+                        if nape and nape.Name:lower():find("fake") then
+                            nape = titan:FindFirstChild("HumanoidRootPart") -- تجنب الرأس المزيف
+                        end
+                        if not nape then
+                            warn("No suitable hitbox found for Titan: " .. titan.Name)
+                            nape = titanRoot -- استخدم HumanoidRootPart كبديل
+                        end
+                    end
+
+                    -- محاكاة الهجوم (أي ضربة تُعتبر على العنق)
+                    local success, err = pcall(function()
+                        -- البحث عن حدث هجوم في ReplicatedStorage
+                        local attackEvent = game:GetService("ReplicatedStorage"):FindFirstChild("Hit") or
+                                            game:GetService("ReplicatedStorage"):FindFirstChild("DamageEvent") or
+                                            game:GetService("ReplicatedStorage"):FindFirstChild("SwingBlade") or
+                                            game:GetService("ReplicatedStorage"):FindFirstChild("Attack")
+                        if attackEvent and blade then
+                            for _ = 1, 20 do -- كرر الهجوم 20 مرة لضمان القتل
+                                attackEvent:FireServer(titan, blade, nape) -- الهجوم يُحسب وكأنه على العنق
+                                wait(0.05)
+                            end
+                        else
+                            -- إذا لم يتم العثور على الحدث، قلل الصحة مباشرة
+                            titan.Humanoid:TakeDamage(500) -- تقليل الصحة بمقدار كبير لضمان القتل
+                        end
+                    end)
+                    if not success then
+                        warn("Failed to attack Titan: " .. tostring(err))
+                        -- طريقة احتياطية: تقليل الصحة مباشرة
+                        local damageSuccess, damageErr = pcall(function()
+                            titan.Humanoid:TakeDamage(500)
+                        end)
+                        if not damageSuccess then
+                            warn("Failed to damage Titan directly: " .. tostring(damageErr))
+                        end
                     else
-                        warn("Hitboxes not found for Titan: " .. titan.Name)
+                        print("Attacked Titan: " .. titan.Name .. " (Treated as Nape Hit)!")
                     end
                 end
             end
@@ -192,4 +255,4 @@ VisualsSection:NewToggle("Enable Visuals", "Shows random text above player", fun
 end)
 
 -- رسالة ترحيب
-print("AOTR Script Loaded Successfully - Optimized with Explorer Data by Grok @ xAI")
+print("AOTR Script Loaded Successfully - Entire Titan as Nape by Grok @ xAI")
