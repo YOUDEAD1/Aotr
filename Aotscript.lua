@@ -1,24 +1,72 @@
--- سكريبت متكامل لـ AOTR (مع نصوص عشوائية مشابهة لما وجدته)
--- التاريخ: 27 فبراير 2025
+-- سكريبت متكامل لـ AOTR (محسن بناءً على بنية اللعبة)
+-- التاريخ: 28 فبراير 2025
 
 -- إعداد مكتبة واجهة المستخدم (UI Library)
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("AOTR Script - Powered by xAI", "Ocean")
 
--- القسم الأول: Auto-Farm
+-- تحقق من وجود اللاعب والشخصية
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local rootPart = character:WaitForChild("HumanoidRootPart")
+
+-- القسم الأول: Auto-Farm (محسن لقتل الـ Titans)
 local AutoFarmTab = Window:NewTab("Auto Farm")
 local AutoFarmSection = AutoFarmTab:NewSection("Auto Farm Controls")
 local AutoFarmEnabled = false
 
-AutoFarmSection:NewToggle("Enable Auto Farm", "Automatically farms resources or kills Titans", function(state)
+AutoFarmSection:NewToggle("Enable Auto Farm", "Automatically kills Titans", function(state)
     AutoFarmEnabled = state
     if AutoFarmEnabled then
         print("Auto Farm Enabled!")
         while AutoFarmEnabled and wait(0.1) do
-            for _, enemy in pairs(game.Workspace.Enemies:GetChildren()) do
-                if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
-                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = enemy.HumanoidRootPart.CFrame * CFrame.new(0, 0, -5)
-                    game:GetService("ReplicatedStorage").Events.Attack:FireServer(enemy)
+            -- استهداف الـ Titans في Workspace.Titans
+            local titansFolder = game.Workspace:FindFirstChild("Titans")
+            if not titansFolder then
+                warn("Titans folder not found in Workspace!")
+                return
+            end
+
+            for _, titan in pairs(titansFolder:GetChildren()) do
+                if titan:IsA("Model") and titan:FindFirstChild("Humanoid") and titan.Humanoid.Health > 0 then
+                    print("Found Titan: " .. titan.Name)
+                    -- نقل اللاعب إلى موقع الـ Titan
+                    local titanRoot = titan:FindFirstChild("HumanoidRootPart")
+                    if titanRoot then
+                        rootPart.CFrame = titanRoot.CFrame * CFrame.new(0, 0, -5)
+                    end
+
+                    -- استهداف نقاط الضعف (Hitboxes.Hit)
+                    local hitboxes = titan:FindFirstChild("Hitboxes")
+                    if hitboxes then
+                        for _, hit in pairs(hitboxes:GetChildren()) do
+                            if hit.Name == "Hit" then
+                                -- محاكاة الهجوم على نقطة الضعف
+                                local success, err = pcall(function()
+                                    -- افتراض حدث هجوم في ReplicatedStorage
+                                    local attackEvent = game:GetService("ReplicatedStorage"):FindFirstChild("Hit") or
+                                                        game:GetService("ReplicatedStorage"):FindFirstChild("DamageEvent")
+                                    if attackEvent then
+                                        for _ = 1, 5 do -- كرر الهجوم 5 مرات لضمان القتل
+                                            attackEvent:FireServer(titan, hit)
+                                            wait(0.05)
+                                        end
+                                    else
+                                        -- إذا لم يتم العثور على الحدث، حاول تقليل الصحة مباشرة
+                                        titan.Humanoid.Health = titan.Humanoid.Health - 100
+                                    end
+                                end)
+                                if not success then
+                                    warn("Failed to attack Titan: " .. tostring(err))
+                                else
+                                    print("Attacked Titan: " .. titan.Name .. " at Hitbox: " .. hit.Name)
+                                end
+                            end
+                        end
+                    else
+                        warn("Hitboxes not found for Titan: " .. titan.Name)
+                    end
                 end
             end
         end
@@ -32,123 +80,116 @@ local MovementTab = Window:NewTab("Movement")
 local MovementSection = MovementTab:NewSection("Speed & Fly")
 local SpeedEnabled = false
 local FlyEnabled = false
-local DefaultSpeed = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character.Humanoid.WalkSpeed or 16
+local DefaultSpeed = humanoid.WalkSpeed or 16
 
 MovementSection:NewToggle("Super Speed", "Increases your movement speed", function(state)
     SpeedEnabled = state
     if SpeedEnabled then
-        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 100
+        local success, err = pcall(function()
+            humanoid.WalkSpeed = 100
+        end)
+        if not success then
+            warn("Failed to set WalkSpeed: " .. tostring(err))
+            -- طريقة بديلة باستخدام CFrame
+            spawn(function()
+                while SpeedEnabled and wait() do
+                    if humanoid.MoveDirection.Magnitude > 0 then
+                        rootPart.CFrame = rootPart.CFrame + humanoid.MoveDirection * 5
+                    end
+                end
+            end)
+        else
+            print("Super Speed Enabled!")
+        end
     else
-        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = DefaultSpeed
+        humanoid.WalkSpeed = DefaultSpeed
+        print("Super Speed Disabled!")
     end
 end)
 
 MovementSection:NewToggle("Fly", "Enables flying", function(state)
     FlyEnabled = state
     if FlyEnabled then
-        local BodyVelocity = Instance.new("BodyVelocity")
-        BodyVelocity.Velocity = Vector3.new(0, 50, 0)
-        BodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        BodyVelocity.Parent = game.Players.LocalPlayer.Character.HumanoidRootPart
+        local success, err = pcall(function()
+            local BodyVelocity = Instance.new("BodyVelocity")
+            BodyVelocity.Velocity = Vector3.new(0, 50, 0)
+            BodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            BodyVelocity.Parent = rootPart
 
-        local BodyGyro = Instance.new("BodyGyro")
-        BodyGyro.D = 100
-        BodyGyro.P = 3000
-        BodyGyro.MaxTorque = Vector3.new(4000, 4000, 4000)
-        BodyGyro.Parent = game.Players.LocalPlayer.Character.HumanoidRootPart
+            local BodyGyro = Instance.new("BodyGyro")
+            BodyGyro.D = 100
+            BodyGyro.P = 3000
+            BodyGyro.MaxTorque = Vector3.new(4000, 4000, 4000)
+            BodyGyro.Parent = rootPart
 
-        while FlyEnabled and wait() do
-            local direction = game.Players.LocalPlayer.Character.Humanoid.MoveDirection * 50
-            BodyVelocity.Velocity = Vector3.new(direction.X, BodyVelocity.Velocity.Y, direction.Z)
+            while FlyEnabled and wait() do
+                local direction = humanoid.MoveDirection * 50
+                BodyVelocity.Velocity = Vector3.new(direction.X, BodyVelocity.Velocity.Y, direction.Z)
+            end
+            BodyVelocity:Destroy()
+            BodyGyro:Destroy()
+        end)
+        if not success then
+            warn("Failed to enable Fly: " .. tostring(err))
+            -- طريقة بديلة باستخدام CFrame
+            spawn(function()
+                while FlyEnabled and wait() do
+                    rootPart.CFrame = rootPart.CFrame * CFrame.new(humanoid.MoveDirection * 5 + Vector3.new(0, 2, 0))
+                end
+            end)
+        else
+            print("Fly Enabled!")
         end
-        BodyVelocity:Destroy()
-        BodyGyro:Destroy()
     end
 end)
 
--- القسم الثالث: العناصر البصرية (مع نصوص عشوائية)
+-- القسم الثالث: العناصر البصرية (باستخدام BillboardGui)
 local VisualsTab = Window:NewTab("Visuals")
 local VisualsSection = VisualsTab:NewSection("Visual ESP")
 local VisualsEnabled = false
 
--- جدول يحتوي على نصوص مشفرة مشابهة لما وجدته
 local encodedTable = {
     "sb94mq1=", "AJ54l+t=", "lw0MO3v=", "Wd0aXmykzv==", "4uPmxi==", "U9p3hYh=",
     "d07D97H=", "9/AJXd1=", "xrBbpqm=", "U+fNWRo=", "z2o=", "PSvu/v==", "qJMWUXh=",
     "9gXs3CM=", "GVx4Ii3="
 }
 
-local function decodeValue(value)
-    -- دالة فك تشفير مبسطة للحفاظ على النصوص العشوائية كما هي إذا لم تفك بنجاح
-    if type(value) == "string" and value:find("=") then
-        local success, decoded = pcall(function()
-            local base64Alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-            local data = value:gsub("[^" .. base64Alphabet .. "=]", "")
-            local binaryString = data:gsub(".", function(char)
-                if char == "=" then return "" end
-                local charValue = base64Alphabet:find(char, 1, true) - 1
-                local bits = ""
-                for i = 6, 1, -1 do
-                    bits = bits .. ((charValue % 2^i - charValue % 2^(i-1) > 0) and "1" or "0")
-                end
-                return bits
-            end)
-            local decoded = binaryString:gsub("%d%d%d?%d?%d?%d?%d?%d?", function(byteString)
-                if #byteString ~= 8 then return "" end
-                local byteValue = 0
-                for i = 1, 8 do
-                    byteValue = byteValue + ((byteString:sub(i, i) == "1") and 2^(8 - i) or 0)
-                end
-                return string.char(byteValue)
-            end)
-            return decoded ~= "" and decoded or value
-        end)
-        return success and decoded or value
-    end
-    return value
-end
-
-VisualsSection:NewToggle("Enable Visuals", "Shows ESP circle and random encoded text", function(state)
+VisualsSection:NewToggle("Enable Visuals", "Shows random text above player", function(state)
     VisualsEnabled = state
     if VisualsEnabled then
-        spawn(function()
-            local player = game.Players.LocalPlayer
-            local character = player.Character or player.CharacterAdded:Wait()
-            local rootPart = character:WaitForChild("HumanoidRootPart")
+        local success, err = pcall(function()
+            local billboardGui = Instance.new("BillboardGui")
+            billboardGui.Size = UDim2.new(0, 200, 0, 50)
+            billboardGui.StudsOffset = Vector3.new(0, 5, 0)
+            billboardGui.AlwaysOnTop = true
+            billboardGui.Parent = rootPart
 
-            local circle = Drawing.new("Circle")
-            circle.Position = Vector2.new(rootPart.Position.X * 2, rootPart.Position.Z * 2)
-            circle.Radius = 465
-            circle.Color = Color3.new(1, 1, 1)
-            circle.Thickness = 1
-            circle.Transparency = 0.7
-            circle.Visible = true
+            local textLabel = Instance.new("TextLabel")
+            textLabel.Size = UDim2.new(1, 0, 1, 0)
+            textLabel.BackgroundTransparency = 1
+            textLabel.TextColor3 = Color3.new(1, 0, 0)
+            textLabel.TextScaled = true
+            textLabel.Parent = billboardGui
 
-            local randomTexts = {}
-            for i, value in ipairs(encodedTable) do
-                randomTexts[i] = Drawing.new("Text")
-                randomTexts[i].Size = 20
-                randomTexts[i].Font = Drawing.Fonts.UI
-                randomTexts[i].Position = Vector2.new(rootPart.Position.X + (i * 30), rootPart.Position.Z + 50)
-                randomTexts[i].Text = decodeValue(value) -- عرض النصوص العشوائية
-                randomTexts[i].Color = Color3.new(1, 0, 0)
-                randomTexts[i].Visible = true
-            end
-
-            while VisualsEnabled and task.wait(0.1) do
-                circle.Position = Vector2.new(rootPart.Position.X * 2, rootPart.Position.Z * 2)
-                for i, text in pairs(randomTexts) do
-                    text.Position = Vector2.new(rootPart.Position.X + (i * 30), rootPart.Position.Z + 50)
+            spawn(function()
+                while VisualsEnabled and wait(1) do
+                    local randomText = encodedTable[math.random(1, #encodedTable)]
+                    textLabel.Text = randomText
                 end
-            end
+            end)
 
-            circle:Destroy()
-            for _, text in pairs(randomTexts) do
-                text:Destroy()
-            end
+            spawn(function()
+                while VisualsEnabled and wait() do end
+                billboardGui:Destroy()
+            end)
         end)
+        if not success then
+            warn("Failed to enable Visuals: " .. tostring(err))
+        else
+            print("Visuals Enabled!")
+        end
     end
 end)
 
 -- رسالة ترحيب
-print("AOTR Script Loaded Successfully - Enhanced with Random Text by Grok @ xAI")
+print("AOTR Script Loaded Successfully - Optimized with Explorer Data by Grok @ xAI")
