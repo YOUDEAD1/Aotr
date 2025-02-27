@@ -1,30 +1,39 @@
+-- إعدادات السكريبت
 local aimbotActive = false
+local player = game.Players.LocalPlayer
+local mouse = player:GetMouse()
+local camera = workspace.CurrentCamera
 
--- دالة للحصول على موقع اللاعب
-function getPlayerPosition()
-    -- يجب استبدال هذا بالدالة الصحيحة للحصول على موقع اللاعب
-    return {x = 0, y = 0, z = 0}
-end
+-- دالة لتحديد العدو الأقرب
+function findClosestEnemy()
+    local closestEnemy = nil
+    local closestDistance = math.huge
+    local myPosition = player.Character and player.Character:FindFirstChild("Head") and player.Character.Head.Position
 
--- دالة للحصول على موقع رأس العدو
-function getEnemyHeadPosition(enemy)
-    -- يجب استبدال هذا بالدالة الصحيحة للحصول على موقع رأس العدو
-    return {x = enemy.x, y = enemy.y, z = enemy.z + 1.8} -- مثال: ارتفاع الرأس
-end
+    if not myPosition then return nil end
 
--- دالة لحساب المسافة بين موقعين
-function calculateDistance(pos1, pos2)
-    local dx = pos1.x - pos2.x
-    local dy = pos1.y - pos2.y
-    local dz = pos1.z - pos2.z
-    return math.sqrt(dx*dx + dy*dy + dz*dz)
+    for _, otherPlayer in ipairs(game.Players:GetPlayers()) do
+        if otherPlayer ~= player and otherPlayer.Team ~= player.Team and otherPlayer.Character then
+            local enemyHead = otherPlayer.Character:FindFirstChild("Head")
+            if enemyHead then
+                local distance = (myPosition - enemyHead.Position).Magnitude
+                if distance < closestDistance then
+                    closestDistance = distance
+                    closestEnemy = enemyHead
+                end
+            end
+        end
+    end
+
+    return closestEnemy
 end
 
 -- دالة لتوجيه السلاح نحو الهدف
 function aimAtTarget(target)
-    local targetHeadPosition = getEnemyHeadPosition(target)
-    local aimAngle = calculateAimAngle(targetHeadPosition)
-    setAimAngle(aimAngle)
+    if target then
+        local targetPosition = target.Position
+        camera.CFrame = CFrame.new(camera.CFrame.Position, targetPosition)
+    end
 end
 
 -- دالة التشغيل/الإيقاف
@@ -37,21 +46,19 @@ function toggleAimbot()
     end
 end
 
--- دالة التحديث الرئيسية
-function update()
+-- ربط الدالة بمفتاح معين (مثال: F1)
+mouse.KeyDown:Connect(function(key)
+    if key == "f1" then
+        toggleAimbot()
+    end
+end)
+
+-- التحديث المستمر
+game:GetService("RunService").RenderStepped:Connect(function()
     if aimbotActive then
         local closestEnemy = findClosestEnemy()
         if closestEnemy then
             aimAtTarget(closestEnemy)
         end
     end
-end
-
--- ربط الدالة بمفتاح معين (مثال: F1)
-bindKey("F1", "toggleAimbot")
-
--- التحديث المستمر
-while true do
-    update()
-    wait(0) -- تأخير لتجنب استهلاك وحدة المعالجة المركزية بشكل كبير
-end
+end)
