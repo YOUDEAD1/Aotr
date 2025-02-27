@@ -1,19 +1,21 @@
+-- تحميل مكتبة Kavo UI
 loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 
 local Player = game.Players.LocalPlayer
 local workspace = game:GetService("Workspace")
 local VIM = game:GetService("VirtualInputManager")
 
+-- إنشاء نافذة جديدة
 local Window = KavoUI.CreateLib("Game Script", "Grape")
 
--- نوافذ السكربتات
+-- تبويب Auto Farm
 local AutoFarmTab = Window:NewTab("Auto Farm")
 local ExpandNapeTab = Window:NewTab("Expand Nape")
 local AutoEscapeTab = Window:NewTab("Auto Escape")
 local AutoRepairTab = Window:NewTab("Auto Repair")
 local CombatTab = Window:NewTab("Combat")
 
--- سكريبت توسيع ناب
+-- سكربت توسيع ناب
 ExpandNapeTab:NewButton("Expand Nape", "Expand the Nape hitbox of Titans", function()
     local function findNape(hitFolder)
         return hitFolder:FindFirstChild("Nape")
@@ -49,7 +51,7 @@ ExpandNapeTab:NewButton("Expand Nape", "Expand the Nape hitbox of Titans", funct
     end
 end)
 
--- سكريبت أوتو إيسكايب
+-- سكربت أوتو إيسكايب
 AutoEscapeTab:NewToggle("Auto Escape", "Automatically escape", function(state)
     getgenv().autoescape = state
     while task.wait(0.3) do
@@ -67,7 +69,7 @@ AutoRepairTab:NewToggle("Auto Repair", "Automatically repair weapons", function(
     getgenv().autor = state
     while task.wait() do
         if not getgenv().autor then return end
-        for _, v in pairs(Player.Character["Rig_"..Player.Name]:GetChildren()) do
+        for _, v in pairs(Player.Character:GetChildren()) do
             if v.Name == "RightHand" or v.Name == "LeftHand" then
                 for _, v2 in pairs(v:GetChildren()) do
                     if v2.Name == "Blade_1" then
@@ -100,8 +102,7 @@ CombatTab:NewToggle("Auto Combat", "Automatically attack Titans", function(state
         end
         if titan then
             Player.Character.HumanoidRootPart.CFrame = CFrame.new(titan.HumanoidRootPart.Position) -- التحرك نحو العملاق
-            -- إضافة الكود للهجوم على العملاق
-            -- هنا يمكن أن تضيف الكود المطلوب للهجوم، مثل استخدام أسلحة أو مهارات
+            -- إضافة الكود للهجوم على العملاق هنا
         end
     end
 end)
