@@ -11,7 +11,8 @@ local Aimbot = {
     Locked = nil,              -- الهدف المقفل
     Connections = {},          -- تخزين الاتصالات
     ESPEnabled = true,         -- تفعيل ESP
-    Highlights = {}            -- تخزين تسليط الضوء
+    Highlights = {},           -- تخزين تسليط الضوء
+    Wallbang = true            -- تفعيل Wallbang
 }
 
 -- إنشاء GUI
@@ -35,13 +36,11 @@ StatusLabel.Parent = Frame
 
 -- دالة ESP لتسليط الضوء على الأعداء
 local function UpdateESP()
-    -- إزالة تسليط الضوء القديم
     for _, highlight in pairs(Aimbot.Highlights) do
         highlight:Destroy()
     end
     Aimbot.Highlights = {}
 
-    -- إضافة تسليط الضوء للأعداء
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Team ~= LocalPlayer.Team then
             local character = player.Character
@@ -77,7 +76,6 @@ local function GetClosestEnemy()
                 local screenPos, onScreen = Camera:WorldToViewportPoint(headPos)
                 local distance = (mousePos - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
 
-                -- لا تحقق من الجدران، استهدف مباشرة
                 if distance < closestDistance and onScreen then
                     closestDistance = distance
                     closestEnemy = player
@@ -88,23 +86,45 @@ local function GetClosestEnemy()
     return closestEnemy
 end
 
--- تشغيل Aimbot وESP
+-- دالة Wallbang (محاكاة اختراق الجدران)
+local function Wallbang(target)
+    if not Aimbot.Wallbang or not target then return end
+    local character = LocalPlayer.Character
+    local tool = character and character:FindFirstChildWhichIsA("Tool")
+    if tool then
+        -- محاكاة إطلاق الرصاص عبر الجدار
+        local headPos = target.Character.Head.Position
+        local direction = (headPos - Camera.CFrame.Position).Unit
+        local ray = Ray.new(Camera.CFrame.Position, direction * 1000)
+        local hit, position = workspace:FindPartOnRay(ray, character) -- تجاهل شخصيتك فقط
+
+        -- إذا أصاب العدو، حاكي الضرر
+        if hit and hit:IsDescendantOf(target.Character) then
+            local humanoid = target.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                -- محاكاة الضرر (قد تحتاج إلى تعديل حسب اللعبة)
+                humanoid:TakeDamage(10) -- قيمة الضرر (قابلة للتعديل)
+            end
+        end
+    end
+end
+
+-- تشغيل Aimbot وESP وWallbang
 local function StartAimbot()
-    -- تشغيل Aimbot
     Aimbot.Connections.RenderStepped = RunService.RenderStepped:Connect(function()
         if Aimbot.Enabled then
-            local target = GetClosestEnemy() -- تحديث الهدف في كل إطار
+            local target = GetClosestEnemy()
             if target then
                 local headPos = target.Character.Head.Position
                 Camera.CFrame = CFrame.new(Camera.CFrame.Position, headPos)
                 Aimbot.Locked = target
+                Wallbang(target) -- محاولة ضرب العدو عبر الجدار
             else
                 Aimbot.Locked = nil
             end
         end
     end)
 
-    -- تشغيل ESP
     if Aimbot.ESPEnabled then
         Aimbot.Connections.ESPUpdate = RunService.RenderStepped:Connect(UpdateESP)
     end
@@ -119,7 +139,6 @@ local function StopAimbot()
     if Aimbot.Connections.ESPUpdate then
         Aimbot.Connections.ESPUpdate:Disconnect()
     end
-    -- إزالة تسليط الضوء عند الإيقاف
     for _, highlight in pairs(Aimbot.Highlights) do
         highlight:Destroy()
     end
