@@ -1,143 +1,150 @@
-local VIM = game:GetService("VirtualInputManager")
-local workspace = game:GetService("Workspace")
+-- تحميل مكتبة Kavo UI
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("AOTR Xeno Executor", "DarkTheme")
 
--- Auto Escape (معدل)
-getgenv().autoescape = true
-task.spawn(function()
-    while getgenv().autoescape do
-        local buttons = game.Players.LocalPlayer.PlayerGui:FindFirstChild("Interface") and game.Players.LocalPlayer.PlayerGui.Interface:FindFirstChild("Buttons")
-        if buttons then
-            for _, v in pairs(buttons:GetChildren()) do
-                if v and v:IsA("TextButton") then
-                    VIM:SendKeyEvent(true, string.lower(v.Text), false, game)
-                end
+-- تعريف المتغيرات العامة
+local VIM = game:GetService("VirtualInputManager")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+
+-- إعدادات Auto Farm
+getgenv().AutoKill = false
+getgenv().AutoEscape = false
+getgenv().AutoReplaceBlade = false
+getgenv().AutoGas = false
+getgenv().SpeedBoost = false
+getgenv().FOVChanger = false
+
+-- توسيع Hitbox نقطة النحر
+local function findNape(hitFolder)
+    return hitFolder:FindFirstChild("Nape")
+end
+
+local function expandNapeHitbox(hitFolder)
+    local napeObject = findNape(hitFolder)
+    if napeObject then
+        napeObject.Size = Vector3.new(105, 120, 100)
+        napeObject.Transparency = 0.96
+        napeObject.Color = Color3.new(1, 1, 1)
+        napeObject.Material = Enum.Material.Neon
+        napeObject.CanCollide = false
+        napeObject.Anchored = false
+    end
+end
+
+local function processTitans(titansBasePart)
+    for _, titan in ipairs(titansBasePart:GetChildren()) do
+        local hitboxesFolder = titan:FindFirstChild("Hitboxes")
+        if hitboxesFolder then
+            local hitFolder = hitboxesFolder:FindFirstChild("Hit")
+            if hitFolder then
+                expandNapeHitbox(hitFolder)
             end
         end
-        task.wait(0.3)
+    end
+end
+
+-- إضافة زر Auto Kill في GUI
+local MainTab = Window:NewTab("Main")
+local MainSection = MainTab:NewSection("Auto Farm & Combat")
+
+MainSection:NewToggle("Auto Kill", "Kills titans automatically", function(state)
+    getgenv().AutoKill = state
+    if state then
+        spawn(function()
+            while getgenv().AutoKill do
+                local titansBasePart = Workspace:FindFirstChild("Titans")
+                if titansBasePart then
+                    processTitans(titansBasePart)
+                    for _, titan in ipairs(titansBasePart:GetChildren()) do
+                        if titan:FindFirstChild("HumanoidRootPart") then
+                            LocalPlayer.Character.HumanoidRootPart.CFrame = titan.HumanoidRootPart.CFrame * CFrame.new(0, 0, 5) -- التحرك نحو العملاق
+                            -- كود الهجوم على العملاق
+                            -- تأكد من وجود كود الهجوم هنا
+                        end
+                    end
+                end
+                wait(1)
+            end
+        end)
     end
 end)
 
--- Auto Replace Blade (معدل)
-getgenv().autor = true
-task.spawn(function()
-    while getgenv().autor do
-        local character = game.Players.LocalPlayer.Character
-        if character then
-            for _, v in pairs(character:GetChildren()) do
-                if v:IsA("Tool") then
+-- أوتو إسكايب
+MainSection:NewToggle("Auto Escape", "Auto presses QTE buttons", function(state)
+    getgenv().AutoEscape = state
+    spawn(function()
+        while task.wait(0.3) do
+            if not getgenv().AutoEscape then return end
+            for _, v in pairs(LocalPlayer.PlayerGui.Interface.Buttons:GetChildren()) do
+                if v then
+                    VIM:SendKeyEvent(true, string.sub(tostring(v), 1, 1), false, game)
+                end
+            end
+        end
+    end)
+end)
+
+-- أوتو استبدال السيف
+MainSection:NewToggle("Auto Replace Blade", "Replaces broken blade automatically", function(state)
+    getgenv().AutoReplaceBlade = state
+    spawn(function()
+        while task.wait() do
+            if not getgenv().AutoReplaceBlade then return end
+            for _, v in pairs(LocalPlayer.Character["Rig_"..LocalPlayer.Name]:GetChildren()) do
+                if v.Name == "RightHand" or v.Name == "LeftHand" then
                     for _, v2 in pairs(v:GetChildren()) do
                         if v2.Name == "Blade_1" and v2:GetAttribute("Broken") == true then
-                            VIM:SendKeyEvent(true, "r", false, game)
+                            keypress(0x52) -- مفتاح R للإصلاح
                         end
                     end
                 end
             end
         end
-        task.wait(1)
-    end
+    end)
 end)
 
--- Nape Attacker (معدل)
-local function findNape(titan)
-    local hitboxesFolder = titan:FindFirstChild("Hitboxes")
-    if hitboxesFolder then
-        local hitFolder = hitboxesFolder:FindFirstChild("Hit")
-        if hitFolder then
-            return hitFolder:FindFirstChild("Nape")
-        end
-    end
-    return nil
-end
-
-local function attackNape(titan)
-    local napeObject = findNape(titan)
-    if napeObject then
-        print("Attacking Nape of:", titan.Name)
-        napeObject.Color = Color3.new(1, 0, 0)
-        task.wait(1)
-        napeObject.Color = Color3.new(1, 1, 1)
-    else
-        print("Nape not found for:", titan.Name)
-    end
-end
-
-local function processTitans(titansBasePart)
-    if titansBasePart then
-        for _, titan in ipairs(titansBasePart:GetChildren()) do
-            if titan:IsA("Model") then
-                attackNape(titan)
+-- أوتو تعبئة الغاز
+MainSection:NewToggle("Auto Gas Refill", "Refills gas automatically", function(state)
+    getgenv().AutoGas = state
+    spawn(function()
+        while task.wait(1) do
+            if not getgenv().AutoGas then return end
+            local gasMeter = LocalPlayer.PlayerGui:FindFirstChild("GasMeter")
+            if gasMeter and gasMeter.Value <= 10 then
+                keypress(0x47) -- مفتاح G للتعبئة
             end
         end
-    end
-end
-
-print("Combined Script Loaded")
-
-task.spawn(function()
-    while true do
-        local titansBasePart = workspace:FindFirstChild("Titans")
-        if titansBasePart then
-            processTitans(titansBasePart)
-        else
-            print("Titans folder not found!")
-        end
-        task.wait(5)
-    end
+    end)
 end)
 
--- Camera Control (معدل)
-local __mixous = {};
-local localPlayer = game.Players.LocalPlayer;
-__mixous.directory = workspace:WaitForChild('Titans');
-__mixous.range = 6000;
-__mixous.settings = { x = 5; y = 2; z = -0.3; };
-__mixous.fovchanger = true;
-
-workspace.Camera:GetPropertyChangedSignal('CFrame'):Connect(function()
-    if __mixous.pressed and __mixous.align then
-        workspace.Camera.CFrame = __mixous.align
-        workspace.Camera.CameraSubject = localPlayer.Character
-        workspace.Camera.CameraType = Enum.CameraType.Attach
-        workspace.Camera.FieldOfView = __mixous.fovchanger and 120 or workspace.Camera.FieldOfView
-    end;
-end)
-
-local onTime = game:GetService('HttpService'):GenerateGUID(false)
-getgenv().game__runtime = onTime;
-if getgenv().runtime then
-    pcall(function()
-        getgenv().runtime:Disconnect()
-    end);
-end;
-
-print('running', onTime)
-getgenv().runtime = game:GetService('RunService').RenderStepped:Connect(function()
-    if getgenv().game__runtime ~= onTime then
-        print(getgenv().game__runtime, onTime)
-        print('[disconnected]')
-        getgenv().runtime:Disconnect();
-    end;
-    __mixous.pressed = game:GetService('UserInputService'):IsMouseButtonPressed(Enum.UserInputType.MouseButton2)
-    if not __mixous.pressed then return end;
-    if not localPlayer.Character or not localPlayer.Character:FindFirstChild('HumanoidRootPart') then return end;
-    local titan, closestdist = nil, nil;
-    for i, opposition in next, __mixous.directory:GetChildren() do
-        local calcDist = (opposition:FindFirstChild('HumanoidRootPart').Position - localPlayer.Character:FindFirstChild('HumanoidRootPart').Position).Magnitude
-        if calcDist <= __mixous.range then
-            if calcDist <= __mixous.range / 10 then
-                titan = opposition; closestdist = calcDist
-                break;
-            end;
-            if titan == nil then
-                titan = opposition; closestdist = calcDist
+-- سبيد بوست
+MainSection:NewToggle("Speed Boost", "Increases movement speed", function(state)
+    getgenv().SpeedBoost = state
+    spawn(function()
+        while task.wait() do
+            if getgenv().SpeedBoost then
+                LocalPlayer.Character.Humanoid.WalkSpeed = 50
             else
-                if closestdist > calcDist then
-                    titan = opposition; closestdist = calcDist
-                end
-            end;
-        end;
-    end;
-    if titan then
-        __mixous.align = CFrame.new(localPlayer.Character:FindFirstChild('HumanoidRootPart').Position + Vector3.new(__mixous.settings.x, __mixous.settings.y, __mixous.settings.z), titan:FindFirstChild("Fake") and titan.Fake.Head.Position + Vector3.new(0, -2.4, 0) or titan:FindFirstChild('HumanoidRootPart').Position);
-    end;
-end);
+                LocalPlayer.Character.Humanoid.WalkSpeed = 16
+            end
+        end
+    end)
+end)
+
+-- FOV Changer
+MainSection:NewToggle("FOV Changer", "Expands camera field of view", function(state)
+    getgenv().FOVChanger = state
+    spawn(function()
+        while task.wait() do
+            if getgenv().FOVChanger then
+                Workspace.Camera.FieldOfView = 120
+            else
+                Workspace.Camera.FieldOfView = 70
+            end
+        end
+    end)
+end)
+
+print("✅ AOTR Xeno GUI Loaded!")
