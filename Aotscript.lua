@@ -1,7 +1,7 @@
--- سكريبت فائق التبسيط لـ AOTR (مستوحى من Tekkit Hub)
+-- سكريبت محسن لـ AOTR (مدمج مع ميزات Tekkit Hub)
 -- التاريخ: 28 فبراير 2025
 
-print("AOTR Script Starting - Ultra Simple Version - Grok @ xAI")
+print("AOTR Script Starting - Tekkit Inspired - Grok @ xAI")
 
 -- تحقق من وجود اللاعب والشخصية
 local player = game.Players.LocalPlayer
@@ -19,7 +19,23 @@ if not humanoid or not rootPart then
 end
 print("Character loaded successfully!")
 
--- وظيفة Auto-Farm مباشرة
+-- العثور على الشفرة الخاصة باللاعب (Blade)
+local playerRig = character:FindFirstChild(player.Name .. "_RIG") or character:FindFirstChild("RIG_" .. player.Name)
+local blade = nil
+if playerRig then
+    for i = 1, 7 do
+        local possibleBlade = playerRig:FindFirstChild("Blade_" .. i)
+        if possibleBlade then
+            blade = possibleBlade
+            break
+        end
+    end
+end
+if not blade then
+    warn("Player blade not found! Some attack features may not work correctly.")
+end
+
+-- وظيفة Auto-Farm (مستوحاة من OP Autofarm)
 print("Starting OP Autofarm...")
 while wait(0.1) do
     -- الخطوة 1: البحث عن الـ Titans
@@ -97,10 +113,10 @@ while wait(0.1) do
                 continue
             end
 
-            -- الخطوة 5: محاكاة الهجوم (أي ضربة تُعتبر على العنق)
+            -- الخطوة 5: محاكاة الهجوم (مستوحاة من Tekkit Hub)
             local attackedSuccessfully = false
             local attackEventNames = {
-                "SwingBlade", "Attack", "Hit", "DamageEvent", "DealDamage", "BladeSwing", "Strike", "BladeHit"
+                "BladeHit", "SwingBlade", "Attack", "Hit", "DamageEvent", "DealDamage", "BladeSwing", "Strike"
             }
             for _, eventName in ipairs(attackEventNames) do
                 local attackEvent = game:GetService("ReplicatedStorage"):FindFirstChild(eventName)
@@ -109,7 +125,7 @@ while wait(0.1) do
                     local success, err = pcall(function()
                         for _ = 1, 30 do -- كرر الهجوم 30 مرة
                             attackEvent:FireServer(titan)
-                            wait(0.05)
+                            wait(0.03)
                         end
                     end)
                     if success then
@@ -162,4 +178,4 @@ while wait(0.1) do
     end
 end
 
-print("AOTR Script Loaded Successfully - Ultra Simple Version by Grok @ xAI")
+print("AOTR Script Loaded Successfully - Tekkit Inspired by Grok @ xAI")
