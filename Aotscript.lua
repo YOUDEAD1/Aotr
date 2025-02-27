@@ -14,18 +14,13 @@ getgenv().AutoGas = false
 getgenv().SpeedBoost = false
 getgenv().FOVChanger = false
 
-local VIM = game:GetService("VirtualInputManager")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
 
 -- توسيع هيت بوكس نقطة النحر
-local function findNape(hitFolder)
-    return hitFolder:FindFirstChild("Nape")
-end
-
 local function expandNapeHitbox(hitFolder)
-    local napeObject = findNape(hitFolder)
+    local napeObject = hitFolder:FindFirstChild("Nape")
     if napeObject then
         napeObject.Size = Vector3.new(105, 120, 100)
         napeObject.Transparency = 0.96
@@ -36,13 +31,16 @@ local function expandNapeHitbox(hitFolder)
     end
 end
 
-local function processTitans(titansBasePart)
-    for _, titan in ipairs(titansBasePart:GetChildren()) do
-        local hitboxesFolder = titan:FindFirstChild("Hitboxes")
-        if hitboxesFolder then
-            local hitFolder = hitboxesFolder:FindFirstChild("Hit")
-            if hitFolder then
-                expandNapeHitbox(hitFolder)
+local function processTitans()
+    local titansBasePart = Workspace:FindFirstChild("Titans")
+    if titansBasePart then
+        for _, titan in ipairs(titansBasePart:GetChildren()) do
+            local hitboxesFolder = titan:FindFirstChild("Hitboxes")
+            if hitboxesFolder then
+                local hitFolder = hitboxesFolder:FindFirstChild("Hit")
+                if hitFolder then
+                    expandNapeHitbox(hitFolder)
+                end
             end
         end
     end
@@ -51,11 +49,9 @@ end
 -- إضافة زر Auto Kill في GUI
 MainSection:NewToggle("Auto Kill", "Kills titans automatically", function(state)
     getgenv().AutoKill = state
-    if state then
-        local titansBasePart = Workspace:FindFirstChild("Titans")
-        if titansBasePart then
-            processTitans(titansBasePart)
-        end
+    while getgenv().AutoKill do
+        processTitans()
+        wait(1)
     end
 end)
 
@@ -63,13 +59,13 @@ end)
 MainSection:NewToggle("Auto Escape", "Auto presses QTE buttons", function(state)
     getgenv().AutoEscape = state
     spawn(function()
-        while task.wait(0.3) do
-            if not getgenv().AutoEscape then return end
-            for _, v in pairs(LocalPlayer.PlayerGui.Interface.Buttons:GetChildren()) do
-                if v then
-                    VIM:SendKeyEvent(true, string.sub(tostring(v), 1, 1), false, game)
+        while getgenv().AutoEscape do
+            for _, button in pairs(LocalPlayer.PlayerGui.Interface.Buttons:GetChildren()) do
+                if button then
+                    button:Click() -- افترض أن الزر يمكن النقر عليه
                 end
             end
+            wait(0.3)
         end
     end)
 end)
@@ -78,13 +74,13 @@ end)
 MainSection:NewToggle("Auto Replace Blade", "Replaces broken blade automatically", function(state)
     getgenv().AutoReplaceBlade = state
     spawn(function()
-        while task.wait() do
-            if not getgenv().AutoReplaceBlade then return end
-            for _, v in pairs(LocalPlayer.Character:GetChildren()) do
-                if v:IsA("Tool") and v:GetAttribute("Broken") == true then
-                    keypress(0x52) -- R Key
+        while getgenv().AutoReplaceBlade do
+            for _, tool in pairs(LocalPlayer.Character:GetChildren()) do
+                if tool:IsA("Tool") and tool:GetAttribute("Broken") then
+                    keypress(0x52) -- مفتاح R
                 end
             end
+            wait(1)
         end
     end)
 end)
@@ -93,12 +89,12 @@ end)
 MainSection:NewToggle("Auto Gas Refill", "Refills gas automatically", function(state)
     getgenv().AutoGas = state
     spawn(function()
-        while task.wait(1) do
-            if not getgenv().AutoGas then return end
+        while getgenv().AutoGas do
             local gasMeter = LocalPlayer.PlayerGui:FindFirstChild("GasMeter")
             if gasMeter and gasMeter.Value <= 10 then
-                keypress(0x47) -- G Key
+                keypress(0x47) -- مفتاح G
             end
+            wait(1)
         end
     end)
 end)
@@ -107,13 +103,11 @@ end)
 MainSection:NewToggle("Speed Boost", "Increases movement speed", function(state)
     getgenv().SpeedBoost = state
     spawn(function()
-        while task.wait() do
-            if getgenv().SpeedBoost then
-                LocalPlayer.Character.Humanoid.WalkSpeed = 50
-            else
-                LocalPlayer.Character.Humanoid.WalkSpeed = 16
-            end
+        while getgenv().SpeedBoost do
+            LocalPlayer.Character.Humanoid.WalkSpeed = 50
+            wait(1)
         end
+        LocalPlayer.Character.Humanoid.WalkSpeed = 16
     end)
 end)
 
@@ -121,13 +115,11 @@ end)
 MainSection:NewToggle("FOV Changer", "Expands camera field of view", function(state)
     getgenv().FOVChanger = state
     spawn(function()
-        while task.wait() do
-            if getgenv().FOVChanger then
-                Workspace.CurrentCamera.FieldOfView = 120
-            else
-                Workspace.CurrentCamera.FieldOfView = 70
-            end
+        while getgenv().FOVChanger do
+            Workspace.CurrentCamera.FieldOfView = 120
+            wait(1)
         end
+        Workspace.CurrentCamera.FieldOfView = 70
     end)
 end)
 
