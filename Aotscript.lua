@@ -7,6 +7,7 @@ getgenv().AutoKill = false
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
+local VIM = game:GetService("VirtualInputManager")
 
 -- توسيع hitbox النحر
 local function expandNape(hitbox)
@@ -29,6 +30,7 @@ local function processTitans()
             local hitFolder = hitboxes:FindFirstChild("Hit")
             if hitFolder then
                 expandNape(hitFolder)
+                -- هنا يمكن إضافة الكود للهجوم على العملاق
             end
         end
     end
@@ -37,11 +39,11 @@ end
 -- زر Auto Kill
 local MainTab = Window:NewTab("Main")
 local MainSection = MainTab:NewSection("Auto Farm & Combat")
-MainSection:NewToggle("Auto Kill", "Expand nape hitboxes automatically", function(state)
+MainSection:NewToggle("Auto Kill", "توسيع hitboxes لعملاق", function(state)
     getgenv().AutoKill = state
     while getgenv().AutoKill do
         processTitans()
-        wait(1)
+        wait(1) -- فترة الانتظار لتقليل التحميل
     end
 end)
 
