@@ -12,7 +12,7 @@ local Aimbot = {
         TeamCheck = true,          -- التحقق من الفريق
         AliveCheck = true,         -- التحقق من الحياة
         LockPart = "Head",         -- الجزء المستهدف
-        Sensitivity = 0.05,        -- سرعة القفل
+        Sensitivity = 0.1,         -- سرعة القفل (زيادة لتكون أكثر سلاسة)
     },
     FOVSettings = {
         Enabled = true,
@@ -30,7 +30,7 @@ ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
 local Frame = Instance.new("Frame")
 Frame.Size = UDim2.new(0, 200, 0, 50)
-Frame.Position = UDim2.new(0, 10, 0, 10) -- أعلى يسار (10 من اليسار، 10 من الأعلى)
+Frame.Position = UDim2.new(0, 10, 0, 10) -- أعلى يسار
 Frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 Frame.BorderSizePixel = 0
 Frame.Parent = ScreenGui
@@ -62,6 +62,8 @@ local function GetClosestPlayer()
     local RequiredDistance = Aimbot.FOVSettings.Radius
     Aimbot.Locked = nil
 
+    local mousePos = UserInputService:GetMouseLocation()
+
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
             local character = player.Character
@@ -80,7 +82,7 @@ local function GetClosestPlayer()
 
                 local partPosition = targetPart.Position
                 local vector, onScreen = Camera:WorldToViewportPoint(partPosition)
-                local distance = (ConvertVector(vector) - UserInputService:GetMouseLocation()).Magnitude
+                local distance = (mousePos - ConvertVector(vector)).Magnitude
 
                 if distance < RequiredDistance and onScreen then
                     RequiredDistance = distance
@@ -99,8 +101,11 @@ local function StartAimbot()
         if Aimbot.Settings.Enabled and Aimbot.Running then
             GetClosestPlayer()
             if Aimbot.Locked then
-                local targetPos = Aimbot.Locked.Character[Aimbot.Settings.LockPart].Position
-                Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, targetPos), Aimbot.Settings.Sensitivity)
+                local targetHead = Aimbot.Locked.Character:FindFirstChild(Aimbot.Settings.LockPart)
+                if targetHead then
+                    local targetPos = targetHead.Position
+                    Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, targetPos), Aimbot.Settings.Sensitivity)
+                end
             end
         end
     end)
