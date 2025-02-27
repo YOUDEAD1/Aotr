@@ -1,12 +1,12 @@
--- 🛠️ تحميل Kavo UI Library
+-- تحميل Kavo UI Library
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("AOTR Xeno Executor", "DarkTheme")
 
--- 🏹 الصفحة الرئيسية
+-- الصفحة الرئيسية
 local MainTab = Window:NewTab("Main")
 local MainSection = MainTab:NewSection("Auto Farm & Combat")
 
--- ⚙️ الوظائف العامة
+-- الوظائف العامة
 getgenv().AutoKill = false
 getgenv().AutoEscape = false
 getgenv().AutoReplaceBlade = false
@@ -19,7 +19,7 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
 
--- 🎯 توسيع هيت بوكس نقطة النحر
+-- توسيع هيت بوكس نقطة النحر
 local function findNape(hitFolder)
     return hitFolder:FindFirstChild("Nape")
 end
@@ -48,7 +48,7 @@ local function processTitans(titansBasePart)
     end
 end
 
--- 📌 إضافة زر Auto Kill في GUI
+-- إضافة زر Auto Kill في GUI
 MainSection:NewToggle("Auto Kill", "Kills titans automatically", function(state)
     getgenv().AutoKill = state
     if state then
@@ -59,7 +59,7 @@ MainSection:NewToggle("Auto Kill", "Kills titans automatically", function(state)
     end
 end)
 
--- 🏃‍♂️ أوتو إسكايب
+-- أوتو إسكايب
 MainSection:NewToggle("Auto Escape", "Auto presses QTE buttons", function(state)
     getgenv().AutoEscape = state
     spawn(function()
@@ -74,26 +74,22 @@ MainSection:NewToggle("Auto Escape", "Auto presses QTE buttons", function(state)
     end)
 end)
 
--- 🔪 أوتو استبدال السيف
+-- أوتو استبدال السيف
 MainSection:NewToggle("Auto Replace Blade", "Replaces broken blade automatically", function(state)
     getgenv().AutoReplaceBlade = state
     spawn(function()
         while task.wait() do
             if not getgenv().AutoReplaceBlade then return end
-            for _, v in pairs(LocalPlayer.Character["Rig_"..LocalPlayer.Name]:GetChildren()) do
-                if v.Name == "RightHand" or v.Name == "LeftHand" then
-                    for _, v2 in pairs(v:GetChildren()) do
-                        if v2.Name == "Blade_1" and v2:GetAttribute("Broken") == true then
-                            keypress(0x52) -- R Key
-                        end
-                    end
+            for _, v in pairs(LocalPlayer.Character:GetChildren()) do
+                if v:IsA("Tool") and v:GetAttribute("Broken") == true then
+                    keypress(0x52) -- R Key
                 end
             end
         end
     end)
 end)
 
--- ⛽ أوتو تعبئة الغاز
+-- أوتو تعبئة الغاز
 MainSection:NewToggle("Auto Gas Refill", "Refills gas automatically", function(state)
     getgenv().AutoGas = state
     spawn(function()
@@ -107,7 +103,7 @@ MainSection:NewToggle("Auto Gas Refill", "Refills gas automatically", function(s
     end)
 end)
 
--- ⚡ سبيد بوست
+-- سبيد بوست
 MainSection:NewToggle("Speed Boost", "Increases movement speed", function(state)
     getgenv().SpeedBoost = state
     spawn(function()
@@ -121,7 +117,7 @@ MainSection:NewToggle("Speed Boost", "Increases movement speed", function(state)
     end)
 end)
 
--- 🔭 FOV Changer
+-- FOV Changer
 MainSection:NewToggle("FOV Changer", "Expands camera field of view", function(state)
     getgenv().FOVChanger = state
     spawn(function()
