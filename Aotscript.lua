@@ -2,21 +2,14 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("AOTR Xeno Executor", "DarkTheme")
 
--- تعريف المتغيرات العامة
-local VIM = game:GetService("VirtualInputManager")
+-- إعدادات المستخدم
+getgenv().AutoKill = false
+
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
 
--- إعدادات Auto Farm
-getgenv().AutoKill = false
-getgenv().AutoEscape = false
-getgenv().AutoReplaceBlade = false
-getgenv().AutoGas = false
-getgenv().SpeedBoost = false
-getgenv().FOVChanger = false
-
--- توسيع Hitbox نقطة النحر
+-- توسيع hitbox
 local function findNape(hitFolder)
     return hitFolder:FindFirstChild("Nape")
 end
@@ -45,106 +38,20 @@ local function processTitans(titansBasePart)
     end
 end
 
--- إضافة زر Auto Kill في GUI
+-- زر القتل التلقائي
 local MainTab = Window:NewTab("Main")
 local MainSection = MainTab:NewSection("Auto Farm & Combat")
-
 MainSection:NewToggle("Auto Kill", "Kills titans automatically", function(state)
     getgenv().AutoKill = state
     if state then
-        spawn(function()
-            while getgenv().AutoKill do
-                local titansBasePart = Workspace:FindFirstChild("Titans")
-                if titansBasePart then
-                    processTitans(titansBasePart)
-                    for _, titan in ipairs(titansBasePart:GetChildren()) do
-                        if titan:FindFirstChild("HumanoidRootPart") then
-                            LocalPlayer.Character.HumanoidRootPart.CFrame = titan.HumanoidRootPart.CFrame * CFrame.new(0, 0, 5) -- التحرك نحو العملاق
-                            -- كود الهجوم على العملاق
-                            -- تأكد من وجود كود الهجوم هنا
-                        end
-                    end
-                end
-                wait(1)
+        while getgenv().AutoKill do
+            local titansBasePart = Workspace:FindFirstChild("Titans")
+            if titansBasePart then
+                processTitans(titansBasePart)
             end
-        end)
+            wait(1) -- انتظر ثانية بين كل عملية
+        end
     end
 end)
 
--- أوتو إسكايب
-MainSection:NewToggle("Auto Escape", "Auto presses QTE buttons", function(state)
-    getgenv().AutoEscape = state
-    spawn(function()
-        while task.wait(0.3) do
-            if not getgenv().AutoEscape then return end
-            for _, v in pairs(LocalPlayer.PlayerGui.Interface.Buttons:GetChildren()) do
-                if v then
-                    VIM:SendKeyEvent(true, string.sub(tostring(v), 1, 1), false, game)
-                end
-            end
-        end
-    end)
-end)
-
--- أوتو استبدال السيف
-MainSection:NewToggle("Auto Replace Blade", "Replaces broken blade automatically", function(state)
-    getgenv().AutoReplaceBlade = state
-    spawn(function()
-        while task.wait() do
-            if not getgenv().AutoReplaceBlade then return end
-            for _, v in pairs(LocalPlayer.Character["Rig_"..LocalPlayer.Name]:GetChildren()) do
-                if v.Name == "RightHand" or v.Name == "LeftHand" then
-                    for _, v2 in pairs(v:GetChildren()) do
-                        if v2.Name == "Blade_1" and v2:GetAttribute("Broken") == true then
-                            keypress(0x52) -- مفتاح R للإصلاح
-                        end
-                    end
-                end
-            end
-        end
-    end)
-end)
-
--- أوتو تعبئة الغاز
-MainSection:NewToggle("Auto Gas Refill", "Refills gas automatically", function(state)
-    getgenv().AutoGas = state
-    spawn(function()
-        while task.wait(1) do
-            if not getgenv().AutoGas then return end
-            local gasMeter = LocalPlayer.PlayerGui:FindFirstChild("GasMeter")
-            if gasMeter and gasMeter.Value <= 10 then
-                keypress(0x47) -- مفتاح G للتعبئة
-            end
-        end
-    end)
-end)
-
--- سبيد بوست
-MainSection:NewToggle("Speed Boost", "Increases movement speed", function(state)
-    getgenv().SpeedBoost = state
-    spawn(function()
-        while task.wait() do
-            if getgenv().SpeedBoost then
-                LocalPlayer.Character.Humanoid.WalkSpeed = 50
-            else
-                LocalPlayer.Character.Humanoid.WalkSpeed = 16
-            end
-        end
-    end)
-end)
-
--- FOV Changer
-MainSection:NewToggle("FOV Changer", "Expands camera field of view", function(state)
-    getgenv().FOVChanger = state
-    spawn(function()
-        while task.wait() do
-            if getgenv().FOVChanger then
-                Workspace.Camera.FieldOfView = 120
-            else
-                Workspace.Camera.FieldOfView = 70
-            end
-        end
-    end)
-end)
-
-print("✅ AOTR Xeno GUI Loaded!")
+print("Script Loaded Successfully")
