@@ -58,7 +58,7 @@ AutoEscapeTab:NewToggle("Auto Escape", "Automatically escape", function(state)
         if not getgenv().autoescape then return end
         for _, v in pairs(Player.PlayerGui.Interface.Buttons:GetChildren()) do
             if v then
-                VIM:SendKeyEvent(true, string.sub(tostring(v), 1, 1), false, game)
+                VIM:SendKeyEvent(true, string.sub(tostring(v.Name), 1, 1), false, game)
             end
         end
     end
@@ -67,15 +67,13 @@ end)
 -- سكريبت أوتو إصلاح الأسلحة
 AutoRepairTab:NewToggle("Auto Repair", "Automatically repair weapons", function(state)
     getgenv().autor = state
-    while task.wait() do
+    while task.wait(0.1) do
         if not getgenv().autor then return end
         for _, v in pairs(Player.Character:GetChildren()) do
             if v.Name == "RightHand" or v.Name == "LeftHand" then
                 for _, v2 in pairs(v:GetChildren()) do
-                    if v2.Name == "Blade_1" then
-                        if v2:GetAttribute("Broken") == true then
-                            keypress(0x52) -- مفتاح R لإصلاح
-                        end
+                    if v2.Name == "Blade_1" and v2:GetAttribute("Broken") == true then
+                        VIM:SendKeyEvent(true, Enum.KeyCode.R, false, game) -- مفتاح R لإصلاح
                     end
                 end
             end
@@ -89,14 +87,12 @@ CombatTab:NewToggle("Auto Combat", "Automatically attack Titans", function(state
     while task.wait(0.1) do
         if not getgenv().autocombat then return end
         local titan, closestdist = nil, math.huge
-        for _, opposition in next, workspace.Titans:GetChildren() do
+        for _, opposition in pairs(workspace.Titans:GetChildren()) do
             if opposition:FindFirstChild("HumanoidRootPart") then
                 local calcDist = (opposition.HumanoidRootPart.Position - Player.Character.HumanoidRootPart.Position).Magnitude
-                if calcDist <= 6000 then -- المسافة المحددة
-                    if calcDist < closestdist then
-                        titan = opposition
-                        closestdist = calcDist
-                    end
+                if calcDist <= 6000 and calcDist < closestdist then
+                    titan = opposition
+                    closestdist = calcDist
                 end
             end
         end
