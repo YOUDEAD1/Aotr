@@ -2,6 +2,14 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("Aimbot & Hacks", "DarkTheme")
 
+-- إظهار وإخفاء القائمة بزر RightShift
+local UIS = game:GetService("UserInputService")
+UIS.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        Window:Toggle()
+    end
+end)
+
 -- تعريف الخدمات
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -15,7 +23,7 @@ local Aimbot = {
     Enabled = false,
     Locked = nil,
     ESPEnabled = true,
-    HitboxSize = 7,  -- حجم المربع حول الأعداء
+    HitboxSize = 15,  -- تكبير حجم المربع حول العدو
     Highlights = {}
 }
 
@@ -34,7 +42,7 @@ AimbotSection:NewToggle("Enable ESP", "تفعيل/إيقاف رؤية الأعد
     Aimbot.ESPEnabled = state
 end)
 
-AimbotSection:NewSlider("Hitbox Size", "تحكم في حجم المربع حول الأعداء", 15, 5, function(value)
+AimbotSection:NewSlider("Hitbox Size", "تحكم في حجم المربع حول الأعداء", 30, 10, function(value)
     Aimbot.HitboxSize = value
 end)
 
@@ -87,18 +95,22 @@ local function UpdateESP()
                 -- إنشاء المربع الكبير حول العدو
                 local hitbox = Instance.new("Part")
                 hitbox.Size = Vector3.new(Aimbot.HitboxSize, Aimbot.HitboxSize, Aimbot.HitboxSize)
-                hitbox.Transparency = 0.7
+                hitbox.Transparency = 0.5
                 hitbox.CanCollide = false
                 hitbox.Anchored = true
                 hitbox.Color = Color3.fromRGB(255, 0, 0)
-                hitbox.Material = Enum.Material.ForceField
-                hitbox.Parent = character
+                hitbox.Material = Enum.Material.Neon
+                hitbox.Parent = workspace
                 hitbox.Position = head.Position
 
                 -- تحديث المربع مع حركة العدو
-                RunService.RenderStepped:Connect(function()
-                    if hitbox and head then
+                local connection
+                connection = RunService.RenderStepped:Connect(function()
+                    if hitbox and head and character and humanoid.Health > 0 then
                         hitbox.Position = head.Position
+                    else
+                        hitbox:Destroy()
+                        connection:Disconnect()
                     end
                 end)
 
@@ -157,4 +169,4 @@ end
 
 StartAimbot()
 
-print("Script Loaded Successfully!")
+print("✅ Script Loaded Successfully! Press RightShift to toggle UI.")
