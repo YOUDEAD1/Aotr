@@ -10,7 +10,7 @@ UIS.InputBegan:Connect(function(input)
     end
 end)
 
--- إضافة زر لإخفاء وإظهار القائمة
+-- إضافة زر لإخفاء وإظهار القائمة بجانب "X"
 local ToggleButtonTab = Window:NewTab("Toggle")
 local ToggleButtonSection = ToggleButtonTab:NewSection("Control UI")
 
@@ -38,6 +38,8 @@ local Aimbot = {
 local SpeedHack = 16  -- السرعة الافتراضية
 local WallHack = false
 local FlyEnabled = false  -- لتفعيل الطيران
+local FlySpeed = 50  -- سرعة الطيران الافتراضية
+local FlyDirection = Vector3.new(0, 0, 0)  -- اتجاه الطيران
 
 -- واجهة Aimbot
 local AimbotTab = Window:NewTab("Aimbot")
@@ -93,24 +95,20 @@ local FlySection = FlyTab:NewSection("Flight Settings")
 
 FlySection:NewToggle("Enable Flight", "تفعيل/إيقاف الطيران", function(state)
     FlyEnabled = state
-    local character = LocalPlayer.Character
-    if character then
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if FlyEnabled then
+    if FlyEnabled then
+        local character = LocalPlayer.Character
+        if character then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
             if humanoid then
                 humanoid.PlatformStand = true  -- تعطيل الحركة العادية
-                local bodyVelocity = Instance.new("BodyVelocity")
-                bodyVelocity.MaxForce = Vector3.new(400000, 400000, 400000)
-                bodyVelocity.Velocity = Vector3.new(0, 50, 0)  -- تعديل الارتفاع
-                bodyVelocity.Parent = character:FindFirstChild("HumanoidRootPart")
             end
-        else
+        end
+    else
+        local character = LocalPlayer.Character
+        if character then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
             if humanoid then
                 humanoid.PlatformStand = false  -- استعادة الحركة العادية
-                local bodyVelocity = character:FindFirstChild("HumanoidRootPart"):FindFirstChildOfClass("BodyVelocity")
-                if bodyVelocity then
-                    bodyVelocity:Destroy()
-                end
             end
         end
     end
@@ -189,6 +187,46 @@ local function ShootAtEnemy(target)
     if hitPart and hitPart.Parent == target.Character then
         -- هنا يمكنك إضافة الكود لإصابة العدو أو تأثير الهجوم
         print("Target hit!")
+        -- إضافة تأثير الإصابة هنا، مثل تقليص الصحة
+        local humanoid = target.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid:TakeDamage(50)  -- ضرب العدو وتطبيق الضرر
+        end
+    end
+end
+
+-- دالة للطيران
+local function FlyPlayer()
+    local character = LocalPlayer.Character
+    if character then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        local rootPart = character:FindFirstChild("HumanoidRootPart")
+
+        if rootPart then
+            -- تحديث الاتجاه بناءً على الحركة
+            local moveDirection = Vector3.new()
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+                moveDirection = moveDirection + Camera.CFrame.LookVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+                moveDirection = moveDirection - Camera.CFrame.LookVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+                moveDirection = moveDirection - Camera.CFrame.RightVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+                moveDirection = moveDirection + Camera.CFrame.RightVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+                moveDirection = moveDirection + Vector3.new(0, 1, 0)  -- الصعود
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.C) then
+                moveDirection = moveDirection - Vector3.new(0, 1, 0)  -- الهبوط
+            end
+
+            -- تطبيق السرعة والتحكم في الطيران
+            rootPart.Velocity = moveDirection * FlySpeed
+        end
     end
 end
 
@@ -201,19 +239,15 @@ local function StartAimbot()
                 local headPos = target.Character.Head.Position
                 Camera.CFrame = CFrame.new(Camera.CFrame.Position, headPos)
                 Aimbot.Locked = target
-                -- إطلاق الشعاع تجاه العدو
-                ShootAtEnemy(target)
-            else
-                Aimbot.Locked = nil
+                ShootAtEnemy(target)  -- إطلاق الشعاع نحو الرأس
             end
         end
+        -- تحديث ESP
+        if Aimbot.ESPEnabled then
+            UpdateESP()
+        end
     end)
-
-    if Aimbot.ESPEnabled then
-        RunService.RenderStepped:Connect(UpdateESP)
-    end
 end
 
+-- بدء تشغيل Aimbot
 StartAimbot()
-
-print("✅ Script Loaded Successfully! Press RightShift to toggle UI.")
