@@ -10,7 +10,7 @@ local Aimbot = {
     Enabled = false,           -- حالة السكريبت
     Locked = nil,              -- الهدف المقفل
     Connections = {},          -- تخزين الاتصالات
-    WallCheck = false          -- التحقق من الجدران (false = يمكن ضرب عدو وراء جدار)
+    WallCheck = false,         -- التحقق من الجدران (false = يمكن ضرب عدو وراء جدار)
     ESPEnabled = true,         -- تفعيل ESP
     Highlights = {}            -- تخزين تسليط الضوء
 }
@@ -78,7 +78,7 @@ local function GetClosestEnemy()
                 local screenPos, onScreen = Camera:WorldToViewportPoint(headPos)
                 local distance = (mousePos - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
 
-                -- إذا WallCheck مفعل، تحقق من الجدران
+                -- إذا كان WallCheck مفعل، تحقق من الجدران
                 if Aimbot.WallCheck then
                     local ray = Ray.new(Camera.CFrame.Position, (headPos - Camera.CFrame.Position).Unit * 1000)
                     local hit = workspace:FindPartOnRayWithIgnoreList(ray, {LocalPlayer.Character})
@@ -94,10 +94,6 @@ local function GetClosestEnemy()
                         closestDistance = distance
                         closestEnemy = player
                     end
-                -- لا تحقق من الجدران، استهدف مباشرة
-                if distance < closestDistance and onScreen then
-                    closestDistance = distance
-                    closestEnemy = player
                 end
             end
         end
@@ -105,7 +101,6 @@ local function GetClosestEnemy()
     return closestEnemy
 end
 
--- تشغيل Aimbot
 -- تشغيل Aimbot وESP
 local function StartAimbot()
     -- تشغيل Aimbot
@@ -115,10 +110,8 @@ local function StartAimbot()
             if target then
                 local headPos = target.Character.Head.Position
                 Camera.CFrame = CFrame.new(Camera.CFrame.Position, headPos)
-                Aimbot.Locked = target -- تحديث الهدف المقفل
                 Aimbot.Locked = target
             else
-                Aimbot.Locked = nil -- إلغاء القفل إذا لم يكن هناك هدف
                 Aimbot.Locked = nil
             end
         end
@@ -130,7 +123,6 @@ local function StartAimbot()
     end
 end
 
--- إيقاف Aimbot
 -- إيقاف Aimbot وESP
 local function StopAimbot()
     Aimbot.Locked = nil
