@@ -1,26 +1,26 @@
--- تحميل مكتبة Kavo UI
+-- تحميل مكتبة Kavo UI (لا تحذف أي ميزة)
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("Aimbot & Hacks", "DarkTheme")
 
 ----------------------------------------------------------------
--- زر Toggle UI بلون أحمر فاتح يظهر في الزاوية العليا اليمنى
+-- زر Toggle UI مستقل: يغير Visible للواجهة (بلون أحمر فاتح)
 ----------------------------------------------------------------
 do
-    local sg = Instance.new("ScreenGui")
-    sg.Name = "CustomToggleUI"
-    sg.Parent = game.CoreGui
+    local toggleUI = Instance.new("TextButton")
+    toggleUI.Name = "CustomToggleUIButton"
+    toggleUI.Size = UDim2.new(0, 100, 0, 40)
+    toggleUI.Position = UDim2.new(1, -110, 0, 10)
+    toggleUI.BackgroundColor3 = Color3.fromRGB(255, 80, 80)  -- أحمر فاتح
+    toggleUI.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toggleUI.Text = "Toggle UI"
+    toggleUI.Parent = game.CoreGui
 
-    local toggleBtn = Instance.new("TextButton")
-    toggleBtn.Name = "ToggleUIButton"
-    toggleBtn.Size = UDim2.new(0, 100, 0, 40)
-    toggleBtn.Position = UDim2.new(1, -110, 0, 10)
-    toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 80, 80)  -- أحمر فاتح
-    toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    toggleBtn.Text = "Hide UI"
-    toggleBtn.Parent = sg
-
-    toggleBtn.MouseButton1Click:Connect(function()
-        Window:Toggle()
+    local uiVisible = true
+    toggleUI.MouseButton1Click:Connect(function()
+        uiVisible = not uiVisible
+        pcall(function()
+            Window.Main.Visible = uiVisible
+        end)
     end)
 end
 
@@ -40,16 +40,20 @@ local Humanoid = Character:FindFirstChildOfClass("Humanoid")
 local Aimbot = {
     Enabled = false,
     Locked = nil,
-    ESPEnabled = true,    -- سنستخدم Highlight لعرض الأعداء
-    HitboxSize = 15       -- لن نستخدم جزء مادي هنا بل نظام Highlight
+    ESPEnabled = true,      -- نستخدم Highlight لعرض الخصوم
+    HitboxSize = 15         -- غير مستخدمة حالياً لأننا نعتمد على Highlight
 }
 local SpeedHack = 16       -- سرعة المشي الافتراضية
-local WallHack = false     -- حالة اختراق الجدران
-local FlyEnabled = false   -- حالة الطيران
+local WallHack = false     -- اختراق الجدران (تغيير CanCollide)
+local FlyEnabled = false   -- الطيران
 local FlySpeed = 50        -- سرعة الطيران
 
+-- الخيارات الإضافية
+local BulletWallHack = false   -- خيار اختراق طلقة الجدران
+local GodMode = false          -- خيار عدم الموت (القوة)
+
 ----------------------------------------------------------------
--- دالة للتأكد من أن اللاعب خصم (إذا كانت خاصية الفريق موجودة)
+-- دالة للتأكد من أن اللاعب خصم (إذا كانت خاصية الفرق موجودة)
 ----------------------------------------------------------------
 local function IsEnemy(player)
     if player and player.Team and LocalPlayer.Team then
@@ -65,13 +69,13 @@ end
 -- تبويب Aimbot
 local AimbotTab = Window:NewTab("Aimbot")
 local AimbotSection = AimbotTab:NewSection("Settings")
-AimbotSection:NewToggle("Enable Aimbot", "تشغيل/إيقاف Aimbot (يعمل عند الضغط على زر الفأرة الأيمن)", function(state)
+AimbotSection:NewToggle("Enable Aimbot", "يعمل عند الضغط على زر الفأرة الأيمن", function(state)
     Aimbot.Enabled = state
 end)
-AimbotSection:NewToggle("Enable ESP", "تشغيل/إيقاف ESP (عرض ألوان العدو)", function(state)
+AimbotSection:NewToggle("Enable ESP", "عرض Highlight على خصومك", function(state)
     Aimbot.ESPEnabled = state
 end)
-AimbotSection:NewSlider("Hitbox Size", "حجم المنطقة المستهدفة (غير مستخدمة في Highlight)", 30, 10, function(value)
+AimbotSection:NewSlider("Hitbox Size", "حجم hitbox (غير مستخدم حالياً)", 30, 10, function(value)
     Aimbot.HitboxSize = value
 end)
 
@@ -88,12 +92,12 @@ end)
 -- تبويب Wall Hack
 local WallHackTab = Window:NewTab("Wall Hack")
 local WallHackSection = WallHackTab:NewSection("Settings")
-WallHackSection:NewToggle("Enable Wall Hack", "اختراق الجدران", function(state)
+WallHackSection:NewToggle("Enable Wall Hack", "تعطيل التصادم في شخصيتك", function(state)
     WallHack = state
     if LocalPlayer.Character then
         for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
             if part:IsA("BasePart") then
-                part.CanCollide = not state  -- عند التفعيل: CanCollide = false
+                part.CanCollide = not state
             end
         end
     end
@@ -119,29 +123,37 @@ FlySection:NewSlider("Fly Speed", "تعديل سرعة الطيران", 100, 10,
     FlySpeed = value
 end)
 
+-- تبويب Extra (الإضافات)
+local ExtraTab = Window:NewTab("Extra")
+local ExtraSection = ExtraTab:NewSection("Options")
+ExtraSection:NewToggle("Bullet Wall Hack", "اختراق طلقة الجدران (تعتبر الطلقة ضاربة حتى مع وجود جدار)", function(state)
+    BulletWallHack = state
+end)
+ExtraSection:NewToggle("God Mode", "لا تموت (قوة إضافية)", function(state)
+    GodMode = state
+end)
+
 ----------------------------------------------------------------
 -- نظام ESP باستخدام Highlight المدمج
--- سنُنشِئ Highlight لكل خصم (أي لاعب من فرق مختلفة) وعند الموت يُزال
 ----------------------------------------------------------------
 local function UpdateEnemyHighlights()
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") and IsEnemy(player) then
-            -- تحقق من وجود Highlight، إذا لم يوجد قم بإنشائه
-            local hl = player.Character:FindFirstChildOfClass("Highlight")
-            if not hl then
-                hl = Instance.new("Highlight")
-                hl.Name = "EnemyHighlight"
-                hl.FillColor = Color3.new(0, 1, 0)         -- لون أخضر ساطع
-                hl.OutlineColor = Color3.new(1, 1, 1)        -- إطار أبيض
-                hl.FillTransparency = 0.3                    -- شفافية منخفضة ليظهر اللون بوضوح
-                hl.OutlineTransparency = 0.1
-                hl.Parent = player.Character
-            else
-                -- إذا كان موجودًا ولكن اللاعب مات (Humanoid.Health <= 0) قم بإزالته
-                local hum = player.Character:FindFirstChildOfClass("Humanoid")
-                if hum and hum.Health <= 0 then
-                    hl:Destroy()
+            local character = player.Character
+            local hum = character:FindFirstChildOfClass("Humanoid")
+            local hl = character:FindFirstChildOfClass("Highlight")
+            if hum and hum.Health > 0 then
+                if not hl then
+                    hl = Instance.new("Highlight")
+                    hl.Name = "EnemyHighlight"
+                    hl.FillColor = Color3.fromRGB(0, 255, 0)   -- لون أخضر فاتح
+                    hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                    hl.FillTransparency = 0.3
+                    hl.OutlineTransparency = 0.1
+                    hl.Parent = character
                 end
+            else
+                if hl then hl:Destroy() end
             end
         end
     end
@@ -151,7 +163,7 @@ end
 -- دوال Aimbot
 ----------------------------------------------------------------
 
--- الحصول على أقرب عدو بالنسبة لموقع الماوس (يستهدف الخصوم فقط)
+-- الحصول على أقرب خصم بناءً على موقع الماوس (يستهدف الخصوم فقط)
 local function GetClosestEnemy()
     local closestDistance = math.huge
     local closestEnemy = nil
@@ -179,17 +191,26 @@ local function ShootAtEnemy(target)
     local origin = Camera.CFrame.Position
     local direction = (head.Position - origin).Unit * 1000
 
-    local rayParams = RaycastParams.new()
-    rayParams.FilterType = Enum.RaycastFilterType.Whitelist
-    rayParams.FilterDescendantsInstances = {target.Character}
-    rayParams.IgnoreWater = true
-
-    local result = workspace:Raycast(origin, direction, rayParams)
-    if result and result.Instance and result.Instance:IsDescendantOf(target.Character) then
-        print("Aimbot locked on head!")
+    if BulletWallHack then
+        -- إذا كان اختراق الرصاص للجدران مفعل، قم بتطبيق الضرر مباشرة
         local humanoid = target.Character:FindFirstChildOfClass("Humanoid")
         if humanoid and humanoid.Health > 0 then
+            print("Bullet Wall Hack active: hit enemy!")
             humanoid:TakeDamage(50)
+        end
+    else
+        local rayParams = RaycastParams.new()
+        rayParams.FilterType = Enum.RaycastFilterType.Whitelist
+        rayParams.FilterDescendantsInstances = {target.Character}
+        rayParams.IgnoreWater = true
+
+        local result = workspace:Raycast(origin, direction, rayParams)
+        if result and result.Instance and result.Instance:IsDescendantOf(target.Character) then
+            print("Aimbot locked on head!")
+            local humanoid = target.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid and humanoid.Health > 0 then
+                humanoid:TakeDamage(50)
+            end
         end
     end
 end
@@ -236,12 +257,12 @@ end
 -- الحلقة الرئيسية للتحديث (RenderStepped)
 ----------------------------------------------------------------
 RunService.RenderStepped:Connect(function()
-    -- تحديث نظام ESP لكل خصم باستخدام Highlight (ستظهر حتى من خلف الجدران)
+    -- تحديث Highlight (ESP) لكل خصم
     if Aimbot.ESPEnabled then
         UpdateEnemyHighlights()
     end
 
-    -- Aimbot يعمل فقط عند الضغط على زر الفأرة الأيمن؛ هذا يسمح بتحريك الماوس بحرية عندما لا يكون مضغوطاً
+    -- Aimbot يعمل فقط عند الضغط على زر الفأرة الأيمن
     if Aimbot.Enabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
         local target = GetClosestEnemy()
         if target and target.Character and target.Character:FindFirstChild("Head") then
@@ -258,12 +279,17 @@ RunService.RenderStepped:Connect(function()
     if FlyEnabled then
         FlyPlayer()
     end
+
+    -- تطبيق God Mode: إعادة تعيين الصحة دائمًا إلى القيمة القصوى إذا كان مفعلًا
+    if GodMode and Humanoid then
+        Humanoid.Health = Humanoid.MaxHealth
+    end
 end)
 
 ----------------------------------------------------------------
 print("✅ Script Loaded Successfully! Press RightShift to toggle UI.")
 UserInputService.InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.RightShift then
-        Window:Toggle()
+        pcall(function() Window.Main.Visible = not Window.Main.Visible end)
     end
 end)
