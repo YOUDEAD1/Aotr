@@ -3,26 +3,24 @@ local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHept
 local Window = Library.CreateLib("Aimbot & Hacks", "DarkTheme")
 
 ----------------------------------------------------------------
--- زر Toggle UI مستقل: يغير Visible للواجهة (بلون أحمر فاتح)
+-- زر Toggle UI مستقل
 ----------------------------------------------------------------
-do
-    local toggleUI = Instance.new("TextButton")
-    toggleUI.Name = "CustomToggleUIButton"
-    toggleUI.Size = UDim2.new(0, 100, 0, 40)
-    toggleUI.Position = UDim2.new(1, -110, 0, 10)
-    toggleUI.BackgroundColor3 = Color3.fromRGB(255, 80, 80)  -- أحمر فاتح
-    toggleUI.TextColor3 = Color3.fromRGB(255, 255, 255)
-    toggleUI.Text = "Toggle UI"
-    toggleUI.Parent = game.CoreGui
+local toggleUI = Instance.new("TextButton")
+toggleUI.Name = "CustomToggleUIButton"
+toggleUI.Size = UDim2.new(0, 100, 0, 40)
+toggleUI.Position = UDim2.new(1, -110, 0, 10)
+toggleUI.BackgroundColor3 = Color3.fromRGB(255, 80, 80)  -- أحمر فاتح
+toggleUI.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleUI.Text = "Toggle UI"
+toggleUI.Parent = game.CoreGui
 
-    local uiVisible = true
-    toggleUI.MouseButton1Click:Connect(function()
-        uiVisible = not uiVisible
-        pcall(function()
-            Window.Main.Visible = uiVisible
-        end)
+local uiVisible = true
+toggleUI.MouseButton1Click:Connect(function()
+    uiVisible = not uiVisible
+    pcall(function()
+        Window.Main.Visible = uiVisible
     end)
-end
+end)
 
 ----------------------------------------------------------------
 -- الخدمات والمتغيرات الأساسية
@@ -41,7 +39,7 @@ local Aimbot = {
     Enabled = false,
     Locked = nil,
     ESPEnabled = true,      -- نستخدم Highlight لعرض الخصوم
-    HitboxSize = 15         -- غير مستخدمة حالياً لأننا نعتمد على Highlight
+    HitboxSize = 15         -- تحديد حجم الـHitbox
 }
 local SpeedHack = 16       -- سرعة المشي الافتراضية
 local WallHack = false     -- اختراق الجدران (تغيير CanCollide)
@@ -51,16 +49,6 @@ local FlySpeed = 50        -- سرعة الطيران
 -- الخيارات الإضافية
 local BulletWallHack = false   -- خيار اختراق طلقة الجدران
 local GodMode = false          -- خيار عدم الموت (القوة)
-
-----------------------------------------------------------------
--- دالة للتأكد من أن اللاعب خصم (إذا كانت خاصية الفرق موجودة)
-----------------------------------------------------------------
-local function IsEnemy(player)
-    if player and player.Team and LocalPlayer.Team then
-        return player.Team ~= LocalPlayer.Team
-    end
-    return true
-end
 
 ----------------------------------------------------------------
 -- تبويبات الواجهة باستخدام Kavo UI
@@ -75,7 +63,7 @@ end)
 AimbotSection:NewToggle("Enable ESP", "عرض Highlight على خصومك", function(state)
     Aimbot.ESPEnabled = state
 end)
-AimbotSection:NewSlider("Hitbox Size", "حجم hitbox (غير مستخدم حالياً)", 30, 10, function(value)
+AimbotSection:NewSlider("Hitbox Size", "حجم hitbox", 30, 10, function(value)
     Aimbot.HitboxSize = value
 end)
 
@@ -146,7 +134,7 @@ local function UpdateEnemyHighlights()
                 if not hl then
                     hl = Instance.new("Highlight")
                     hl.Name = "EnemyHighlight"
-                    hl.FillColor = Color3.fromRGB(0, 255, 0)   -- لون أخضر فاتح
+                    hl.FillColor = Color3.fromRGB(255, 0, 0)   -- لون أحمر فاتح
                     hl.OutlineColor = Color3.fromRGB(255, 255, 255)
                     hl.FillTransparency = 0.3
                     hl.OutlineTransparency = 0.1
@@ -242,54 +230,19 @@ local function FlyPlayer()
         moveDir = moveDir + Camera.CFrame.RightVector
     end
     if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-        moveDir = moveDir + Vector3.new(0,1,0)
+        moveDir = moveDir + Vector3.new(0, 1, 0)
     end
-    if UserInputService:IsKeyDown(Enum.KeyCode.C) then
-        moveDir = moveDir - Vector3.new(0,1,0)
+    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+        moveDir = moveDir - Vector3.new(0, 1, 0)
     end
-    if moveDir.Magnitude > 0 then
-        moveDir = moveDir.Unit * FlySpeed
-    end
-    bv.Velocity = moveDir
+    bv.Velocity = moveDir.Unit * FlySpeed
 end
 
-----------------------------------------------------------------
--- الحلقة الرئيسية للتحديث (RenderStepped)
-----------------------------------------------------------------
-RunService.RenderStepped:Connect(function()
-    -- تحديث Highlight (ESP) لكل خصم
-    if Aimbot.ESPEnabled then
-        UpdateEnemyHighlights()
-    end
-
-    -- Aimbot يعمل فقط عند الضغط على زر الفأرة الأيمن
-    if Aimbot.Enabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
-        local target = GetClosestEnemy()
-        if target and target.Character and target.Character:FindFirstChild("Head") then
-            local headPos = target.Character.Head.Position
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, headPos)
-            Aimbot.Locked = target
-            ShootAtEnemy(target)
-        else
-            Aimbot.Locked = nil
-        end
-    end
-
-    -- تحديث حركة الطيران إذا كانت مفعلّة
+-- الاستماع لتغييرات في الشخصية
+Character:WaitForChild("HumanoidRootPart")
+RunService.Heartbeat:Connect(function()
     if FlyEnabled then
         FlyPlayer()
     end
-
-    -- تطبيق God Mode: إعادة تعيين الصحة دائمًا إلى القيمة القصوى إذا كان مفعلًا
-    if GodMode and Humanoid then
-        Humanoid.Health = Humanoid.MaxHealth
-    end
-end)
-
-----------------------------------------------------------------
-print("✅ Script Loaded Successfully! Press RightShift to toggle UI.")
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.RightShift then
-        pcall(function() Window.Main.Visible = not Window.Main.Visible end)
-    end
+    UpdateEnemyHighlights()
 end)
