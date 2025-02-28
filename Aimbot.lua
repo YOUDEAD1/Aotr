@@ -2,167 +2,162 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("Aimbot & Hacks", "DarkTheme")
 
--- إظهار وإخفاء القائمة بزر RightShift
-local UIS = game:GetService("UserInputService")
-UIS.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.RightShift then
+-- إعداد زر إخفاء الواجهة بجانب "X" (زر خارجي يظهر دائماً)
+do
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "CustomToggleUI"
+    ScreenGui.Parent = game.CoreGui
+
+    local HideButton = Instance.new("TextButton")
+    HideButton.Name = "HideUIButton"
+    HideButton.Size = UDim2.new(0, 80, 0, 30)
+    HideButton.Position = UDim2.new(1, -90, 0, 10)  -- قرب الزاوية العليا اليمنى
+    HideButton.BackgroundColor3 = Color3.fromRGB(50,50,50)
+    HideButton.TextColor3 = Color3.fromRGB(255,255,255)
+    HideButton.Text = "Hide UI"
+    HideButton.Parent = ScreenGui
+
+    HideButton.MouseButton1Click:Connect(function()
         Window:Toggle()
-    end
-end)
+    end)
+end
 
--- إضافة زر لإخفاء وإظهار القائمة بجانب "X"
-local ToggleButtonTab = Window:NewTab("Toggle")
-local ToggleButtonSection = ToggleButtonTab:NewSection("Control UI")
-
-ToggleButtonSection:NewButton("Hide/Show UI", "إخفاء/إظهار واجهة المستخدم", function()
-    Window:Toggle()  -- هذا يقوم بإخفاء أو إظهار الواجهة عندما يتم الضغط على الزر
-end)
-
--- تعريف الخدمات
+-- إعداد متغيرات الخدمات
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
-local Humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
 
--- إعدادات السكربت
+-- إعداد متغيرات الحالة
 local Aimbot = {
     Enabled = false,
     Locked = nil,
     ESPEnabled = true,
-    HitboxSize = 15,  -- تكبير حجم المربع حول العدو
-    Highlights = {}   -- لتخزين الأعداء الذين تم تسليط الضوء عليهم
+    HitboxSize = 15,  -- للتحكم بمستوى الدقة (يمكن تعديله)
+    Highlights = {}   -- لتخزين مؤشرات ESP
 }
+local SpeedHack = 16      -- سرعة المشي
+local WallHack = false    -- حالة اختراق الجدران
+local FlyEnabled = false  -- حالة الطيران
+local FlySpeed = 50       -- سرعة الطيران
 
-local SpeedHack = 16  -- السرعة الافتراضية
-local WallHack = false
-local FlyEnabled = false  -- لتفعيل الطيران
-local FlySpeed = 50  -- سرعة الطيران الافتراضية
-local FlyDirection = Vector3.new(0, 0, 0)  -- اتجاه الطيران
+-- تفعيل تبديل الواجهة بزر RightShift
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        Window:Toggle()
+    end
+end)
 
--- واجهة Aimbot
+--------------------------------------------------
+-- تبويبات الواجهة (Kavo UI)
+--------------------------------------------------
+
+-- تبويب Aimbot
 local AimbotTab = Window:NewTab("Aimbot")
 local AimbotSection = AimbotTab:NewSection("Settings")
-
-AimbotSection:NewToggle("Enable Aimbot", "تفعيل/إيقاف Aimbot", function(state)
+AimbotSection:NewToggle("Enable Aimbot", "تشغيل/إيقاف Aimbot", function(state)
     Aimbot.Enabled = state
 end)
-
-AimbotSection:NewToggle("Enable ESP", "تفعيل/إيقاف رؤية الأعداء", function(state)
+AimbotSection:NewToggle("Enable ESP", "تشغيل/إيقاف ESP للأعداء", function(state)
     Aimbot.ESPEnabled = state
 end)
-
-AimbotSection:NewSlider("Hitbox Size", "تحكم في حجم المربع حول الأعداء", 30, 10, function(value)
+AimbotSection:NewSlider("Hitbox Size", "حجم hitbox للأعداء", 30, 10, function(value)
     Aimbot.HitboxSize = value
 end)
 
--- واجهة السرعة
+-- تبويب Speed Hack
 local SpeedTab = Window:NewTab("Speed Hack")
 local SpeedSection = SpeedTab:NewSection("Control Speed")
-
-SpeedSection:NewSlider("Speed", "تحكم في سرعة اللاعب", 200, 1, function(value)
+SpeedSection:NewSlider("Speed", "تعديل سرعة المشي", 200, 1, function(value)
     SpeedHack = value
-    if Humanoid then
-        Humanoid.WalkSpeed = SpeedHack
+    local character = LocalPlayer.Character
+    if character and character:FindFirstChildOfClass("Humanoid") then
+        character:FindFirstChildOfClass("Humanoid").WalkSpeed = SpeedHack
     end
 end)
 
--- واجهة اختراق الجدران
+-- تبويب Wall Hack
 local WallHackTab = Window:NewTab("Wall Hack")
 local WallHackSection = WallHackTab:NewSection("Wall Hack Settings")
-
-WallHackSection:NewToggle("Enable Wall Hack", "تفعيل/إيقاف اختراق الجدران", function(state)
+WallHackSection:NewToggle("Enable Wall Hack", "اختراق الجدران", function(state)
     WallHack = state
-    if WallHack then
-        for _, v in pairs(LocalPlayer.Character:GetDescendants()) do
-            if v:IsA("BasePart") then
-                v.CanCollide = false
-            end
-        end
-    else
-        for _, v in pairs(LocalPlayer.Character:GetDescendants()) do
-            if v:IsA("BasePart") then
-                v.CanCollide = true
+    local character = LocalPlayer.Character
+    if character then
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = not state  -- عند التفعيل: CanCollide = false
             end
         end
     end
 end)
 
--- واجهة الطيران
+-- تبويب Flight (الطيران)
 local FlyTab = Window:NewTab("Flight")
 local FlySection = FlyTab:NewSection("Flight Settings")
-
-FlySection:NewToggle("Enable Flight", "تفعيل/إيقاف الطيران", function(state)
+FlySection:NewToggle("Enable Flight", "تشغيل/إيقاف الطيران", function(state)
     FlyEnabled = state
-    if FlyEnabled then
-        local character = LocalPlayer.Character
-        if character then
-            local humanoid = character:FindFirstChildOfClass("Humanoid")
-            if humanoid then
-                humanoid.PlatformStand = true  -- تعطيل الحركة العادية
-            end
-        end
-    else
-        local character = LocalPlayer.Character
-        if character then
-            local humanoid = character:FindFirstChildOfClass("Humanoid")
-            if humanoid then
-                humanoid.PlatformStand = false  -- استعادة الحركة العادية
-            end
+    local character = LocalPlayer.Character
+    if character and character:FindFirstChild("Humanoid") then
+        character.Humanoid.PlatformStand = state  -- عند التفعيل، تعطيل الحركة الطبيعية
+        -- عند إيقاف الطيران، إزالة الجسم الفيزيائي الخاص بالطيران إن وجد
+        if not state and character:FindFirstChild("HumanoidRootPart") then
+            local bv = character.HumanoidRootPart:FindFirstChild("FlyVelocity")
+            if bv then bv:Destroy() end
         end
     end
 end)
+FlySection:NewSlider("Fly Speed", "تعديل سرعة الطيران", 100, 10, function(value)
+    FlySpeed = value
+end)
 
--- دالة ESP مع المربع الكبير (Hitbox)
+--------------------------------------------------
+-- وظائف مساعدة
+--------------------------------------------------
+
+-- وظيفة تحديث ESP باستخدام Highlight (تعتمد على مكتبة Highlight المدمجة)
 local function UpdateESP()
-    -- حذف أي Highlights موجودة سابقًا
-    for _, highlight in pairs(Aimbot.Highlights) do
-        highlight:Destroy()
+    -- حذف المؤشرات القديمة
+    for _, obj in pairs(Aimbot.Highlights) do
+        if obj and obj:IsA("Highlight") then
+            obj:Destroy()
+        end
     end
     Aimbot.Highlights = {}
 
-    -- المرور على جميع اللاعبين
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Team ~= LocalPlayer.Team then
             local character = player.Character
             local humanoid = character and character:FindFirstChildOfClass("Humanoid")
             local head = character and character:FindFirstChild("Head")
-
             if character and humanoid and head and humanoid.Health > 0 then
-                -- إنشاء Highlight للأعداء
-                local highlight = Instance.new("Highlight")
-                highlight.Adornee = character
-                highlight.FillColor = Color3.fromRGB(255, 0, 0)  -- تغيير اللون إلى الأحمر
-                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)  -- لون الإطار الأبيض
-                highlight.FillTransparency = 0.5  -- شفافية ملء اللون
-                highlight.OutlineTransparency = 0.8  -- شفافية الإطار
-                highlight.Parent = character
-
-                -- إضافة إلى قائمة Highlights
-                table.insert(Aimbot.Highlights, highlight)
+                local hl = Instance.new("Highlight")
+                hl.Adornee = character
+                hl.FillColor = Color3.new(1, 0, 0)
+                hl.OutlineColor = Color3.new(1, 1, 1)
+                hl.FillTransparency = 0.5
+                hl.OutlineTransparency = 0.8
+                hl.Parent = character
+                table.insert(Aimbot.Highlights, hl)
             end
         end
     end
 end
 
--- دالة للحصول على أقرب عدو
+-- وظيفة الحصول على أقرب عدو من الماوس
 local function GetClosestEnemy()
     local closestDistance = 90
     local closestEnemy = nil
     local mousePos = UserInputService:GetMouseLocation()
-
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Team ~= LocalPlayer.Team then
             local character = player.Character
             local head = character and character:FindFirstChild("Head")
             local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-
             if head and humanoid and humanoid.Health > 0 then
                 local headPos = head.Position
                 local screenPos, onScreen = Camera:WorldToViewportPoint(headPos)
                 local distance = (mousePos - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
-
                 if distance < closestDistance and onScreen then
                     closestDistance = distance
                     closestEnemy = player
@@ -173,81 +168,94 @@ local function GetClosestEnemy()
     return closestEnemy
 end
 
--- دالة لإطلاق الشعاع على العدو مع تجاهل الجدران
+-- وظيفة لإطلاق الشعاع على العدو باستخدام RaycastParams (whitelist) بحيث يتم اعتبار ضرب الرأس حتى لو خلف جدران
 local function ShootAtEnemy(target)
+    local character = target.Character
+    local head = character and character:FindFirstChild("Head")
+    if not (character and head) then return end
+
     local rayOrigin = Camera.CFrame.Position
-    local rayDirection = (target.Character.Head.Position - rayOrigin).unit * 500
+    local rayDirection = (head.Position - rayOrigin).unit * 500
 
-    -- تحديد الكائنات التي سيتم تجاهلها (الجدران)
-    local ignoreList = {LocalPlayer.Character, target.Character}
+    local rayParams = RaycastParams.new()
+    rayParams.FilterType = Enum.RaycastFilterType.Whitelist
+    -- نضع جميع أجزاء شخصية العدو في القائمة حتى يتم تجاهل أي جدران
+    rayParams.FilterDescendantsInstances = {character}
 
-    -- استخدام Raycasting مع تجاهل الجدران
-    local hitPart, hitPosition = workspace:FindPartOnRayWithIgnoreList(Ray.new(rayOrigin, rayDirection), ignoreList)
-
-    if hitPart and hitPart.Parent == target.Character then
-        -- هنا يمكنك إضافة الكود لإصابة العدو أو تأثير الهجوم
+    local rayResult = workspace:Raycast(rayOrigin, rayDirection, rayParams)
+    if rayResult and rayResult.Instance and rayResult.Instance:IsDescendantOf(character) then
         print("Target hit!")
-        -- إضافة تأثير الإصابة هنا، مثل تقليص الصحة
-        local humanoid = target.Character:FindFirstChildOfClass("Humanoid")
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
         if humanoid then
-            humanoid:TakeDamage(50)  -- ضرب العدو وتطبيق الضرر
+            humanoid:TakeDamage(50)
         end
     end
 end
 
--- دالة للطيران
+-- وظيفة الطيران: إضافة/تحديث BodyVelocity للتحكم في حركة اللاعب أثناء الطيران
 local function FlyPlayer()
     local character = LocalPlayer.Character
-    if character then
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not character then return end
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
 
-        if rootPart then
-            -- تحديث الاتجاه بناءً على الحركة
-            local moveDirection = Vector3.new()
-            if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-                moveDirection = moveDirection + Camera.CFrame.LookVector
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-                moveDirection = moveDirection - Camera.CFrame.LookVector
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-                moveDirection = moveDirection - Camera.CFrame.RightVector
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-                moveDirection = moveDirection + Camera.CFrame.RightVector
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-                moveDirection = moveDirection + Vector3.new(0, 1, 0)  -- الصعود
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.C) then
-                moveDirection = moveDirection - Vector3.new(0, 1, 0)  -- الهبوط
-            end
+    local bv = rootPart:FindFirstChild("FlyVelocity")
+    if not bv then
+        bv = Instance.new("BodyVelocity")
+        bv.Name = "FlyVelocity"
+        bv.MaxForce = Vector3.new(1e6,1e6,1e6)
+        bv.Parent = rootPart
+    end
 
-            -- تطبيق السرعة والتحكم في الطيران
-            rootPart.Velocity = moveDirection * FlySpeed
+    local moveDir = Vector3.new(0,0,0)
+    if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+        moveDir = moveDir + Camera.CFrame.LookVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+        moveDir = moveDir - Camera.CFrame.LookVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+        moveDir = moveDir - Camera.CFrame.RightVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+        moveDir = moveDir + Camera.CFrame.RightVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+        moveDir = moveDir + Vector3.new(0,1,0)
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.C) then
+        moveDir = moveDir - Vector3.new(0,1,0)
+    end
+    bv.Velocity = moveDir.Unit * FlySpeed
+end
+
+--------------------------------------------------
+-- الحلقة الرئيسية لتحديث الميزات
+--------------------------------------------------
+
+RunService.RenderStepped:Connect(function()
+    -- Aimbot: إذا كان مفعل، يتم اختيار أقرب عدو وتصويب الكاميرا عليه وإطلاق الشعاع
+    if Aimbot.Enabled then
+        local target = GetClosestEnemy()
+        if target and target.Character and target.Character:FindFirstChild("Head") then
+            local headPos = target.Character.Head.Position
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, headPos)
+            Aimbot.Locked = target
+            ShootAtEnemy(target)
+        else
+            Aimbot.Locked = nil
         end
     end
-end
 
--- تشغيل Aimbot وESP
-local function StartAimbot()
-    RunService.RenderStepped:Connect(function()
-        if Aimbot.Enabled then
-            local target = GetClosestEnemy()
-            if target then
-                local headPos = target.Character.Head.Position
-                Camera.CFrame = CFrame.new(Camera.CFrame.Position, headPos)
-                Aimbot.Locked = target
-                ShootAtEnemy(target)  -- إطلاق الشعاع نحو الرأس
-            end
-        end
-        -- تحديث ESP
-        if Aimbot.ESPEnabled then
-            UpdateESP()
-        end
-    end)
-end
+    -- تحديث ESP (يمكنك تقليل عدد التحديثات إذا حدث تباطؤ)
+    if Aimbot.ESPEnabled then
+        UpdateESP()
+    end
 
--- بدء تشغيل Aimbot
-StartAimbot()
+    -- الطيران: إذا كان الطيران مفعل، يتم تحديث حركة اللاعب
+    if FlyEnabled then
+        FlyPlayer()
+    end
+end)
+
+print("✅ Script Loaded Successfully! Press RightShift to toggle UI.")
