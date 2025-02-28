@@ -1,11 +1,12 @@
+-- سكريبت محسن لـ AOTR (مع GUI مخصص وإصلاح التحكم)
+-- التاريخ: 28 فبراير 2025
 
-print("AOTR Script Starting - Fully Enhanced - Grok @ xAI")
+print("AOTR Script Starting - Custom GUI Enhanced - Grok @ xAI")
 
--- تحميل مكتبة Kavo UI
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("AOTR Auto-Farm", "DarkTheme")
 local VIM = game:GetService("VirtualInputManager")
 local workspace = game:GetService("Workspace")
+local UIS = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
 -- تحقق من اللاعب والشخصية
 local player = game.Players.LocalPlayer
@@ -94,144 +95,254 @@ local function processTitans(titansBasePart)
     end
 end
 
--- إعداد واجهة GUI مع زر الإخفاء
-local Tab = Window:NewTab("Main")
-local Section = Tab:NewSection("Controls")
+-- إعداد GUI مخصص
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.Name = "AOTR_ControlPanel"
 
--- زر الإخفاء بجانب X
-local guiFrame = Window.MainFrame -- الوصول إلى الإطار الرئيسي لـ Kavo UI
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 300, 0, 400)
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+mainFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = mainFrame
+
+local titleText = Instance.new("TextLabel")
+titleText.Size = UDim2.new(0.8, 0, 1, 0)
+titleText.Position = UDim2.new(0, 10, 0, 0)
+titleText.Text = "AOTR Control Panel"
+titleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleText.BackgroundTransparency = 1
+titleText.Font = Enum.Font.SourceSansBold
+titleText.TextSize = 18
+titleText.Parent = titleBar
+
 local hideButton = Instance.new("TextButton")
 hideButton.Size = UDim2.new(0, 30, 0, 30)
-hideButton.Position = UDim2.new(1, -60, 0, 0) -- بجانب زر X
+hideButton.Position = UDim2.new(1, -30, 0, 0)
 hideButton.Text = "-"
-hideButton.Parent = guiFrame
+hideButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+hideButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+hideButton.Parent = titleBar
+
+local contentFrame = Instance.new("Frame")
+contentFrame.Size = UDim2.new(1, -20, 1, -40)
+contentFrame.Position = UDim2.new(0, 10, 0, 35)
+contentFrame.BackgroundTransparency = 1
+contentFrame.Parent = mainFrame
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Padding = UDim.new(0, 10)
+UIListLayout.Parent = contentFrame
+
+-- وظيفة الإخفاء/الإظهار
+local isHidden = false
 hideButton.MouseButton1Click:Connect(function()
-    guiFrame.Visible = not guiFrame.Visible
-    hideButton.Text = guiFrame.Visible and "-" or "+"
+    isHidden = not isHidden
+    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    if isHidden then
+        TweenService:Create(mainFrame, tweenInfo, {Position = UDim2.new(0.5, -150, 1, 0)}):Play()
+        hideButton.Text = "+"
+    else
+        TweenService:Create(mainFrame, tweenInfo, {Position = UDim2.new(0.5, -150, 0.5, -200)}):Play()
+        hideButton.Text = "-"
+    end
 end)
 
-Section:NewToggle("Enable Auto-Farm", "Toggle auto-farming", function(state)
+-- إضافة أزرار التحكم
+local function createToggleButton(text, callback)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, 0, 0, 40)
+    button.Text = text .. ": OFF"
+    button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Font = Enum.Font.SourceSans
+    button.TextSize = 18
+    button.Parent = contentFrame
+    local state = false
+    button.MouseButton1Click:Connect(function()
+        state = not state
+        button.Text = text .. (state and ": ON" or ": OFF")
+        callback(state)
+    end)
+    return button
+end
+
+local function createSlider(text, min, max, default, callback)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 0, 60)
+    frame.BackgroundTransparency = 1
+    frame.Parent = contentFrame
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 0, 20)
+    label.Text = text .. ": " .. default
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.Font = Enum.Font.SourceSans
+    label.TextSize = 18
+    label.Parent = frame
+
+    local slider = Instance.new("TextButton")
+    slider.Size = UDim2.new(1, 0, 0, 20)
+    slider.Position = UDim2.new(0, 0, 0, 30)
+    slider.Text = ""
+    slider.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    slider.Parent = frame
+
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+    fill.Parent = slider
+
+    slider.MouseButton1Down:Connect(function()
+        local mouseConnection
+        mouseConnection = UIS.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement then
+                local relativeX = math.clamp((input.Position.X - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
+                fill.Size = UDim2.new(relativeX, 0, 1, 0)
+                local value = min + (relativeX * (max - min))
+                label.Text = text .. ": " .. string.format("%.2f", value)
+                callback(value)
+            end
+        end)
+        UIS.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                mouseConnection:Disconnect()
+            end
+        end)
+    end)
+end
+
+local function createButton(text, callback)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, 0, 0, 40)
+    button.Text = text
+    button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Font = Enum.Font.SourceSans
+    button.TextSize = 18
+    button.Parent = contentFrame
+    button.MouseButton1Click:Connect(callback)
+end
+
+-- إعداد عناصر GUI
+createToggleButton("Auto-Farm", function(state)
     autoFarmEnabled = state
     print("Auto-Farm " .. (state and "Enabled" or "Disabled"))
 end)
 
-Section:NewToggle("Enable Auto-Escape", "Toggle auto-escape", function(state)
+createToggleButton("Auto-Escape", function(state)
     getgenv().autoescape = state
     print("Auto-Escape " .. (state and "Enabled" or "Disabled"))
 end)
 
-Section:NewToggle("Enable Auto-R (Blade Reload)", "Toggle auto blade reload", function(state)
+createToggleButton("Auto-R (Blade Reload)", function(state)
     getgenv().autor = state
     print("Auto-R " .. (state and "Enabled" or "Disabled"))
 end)
 
-Section:NewToggle("Enable Nape Expander", "Expand titan nape hitbox", function(state)
+createToggleButton("Nape Expander", function(state)
     napeExpanderEnabled = state
     print("Nape Expander " .. (state and "Enabled" or "Disabled"))
 end)
 
-Section:NewToggle("Enable Titan Markers", "Show titan markers", function(state)
+createToggleButton("Titan Markers", function(state)
     titanMarkersEnabled = state
     print("Titan Markers " .. (state and "Enabled" or "Disabled"))
 end)
 
-Section:NewToggle("Enable Camera Lock", "Lock camera to nearest titan", function(state)
+createToggleButton("Camera Lock", function(state)
     cameraLockEnabled = state
     print("Camera Lock " .. (state and "Enabled" or "Disabled"))
 end)
 
-Section:NewSlider("Attack Speed", "Adjust attack speed (lower = faster)", 0.1, 0.01, 0.03, function(value)
+createSlider("Attack Speed", 0.01, 0.1, 0.03, function(value)
     attackSpeed = value
     print("Attack Speed set to: " .. value)
 end)
 
-Section:NewButton("Kill All Titans", "Instantly kill all Titans", function()
-    local titansFolder = workspace:FindFirstChild("Titans")
-    if titansFolder then
-        for _, titan in pairs(titansFolder:GetChildren()) do
-            if titan:IsA("Model") and titan:FindFirstChild("Humanoid") then
-                titan.Humanoid.Health = 0
-            end
+createButton("Kill All Titans", function()
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0 then
+            pcall(function()
+                obj.Humanoid.Health = 0
+            end)
         end
-        print("Killed all Titans!")
-    else
-        warn("Titans folder not found!")
     end
+    print("Attempted to kill all Titans!")
 end)
 
--- Auto-Farm مع Titan Markers
+-- Auto-Farm
 spawn(function()
-    local titanMarkers = {}
     while task.wait(0.1) do
-        if not autoFarmEnabled and not titanMarkersEnabled then continue end
+        if not autoFarmEnabled then continue end
         local titansFolder = workspace:FindFirstChild("Titans")
-        if not titansFolder then continue end
-
-        if napeExpanderEnabled then
-            processTitans(titansFolder)
-        end
-
-        if titanMarkersEnabled then
-            for _, obj in pairs(titanMarkers) do obj:Destroy() end
-            titanMarkers = {}
-            for i, value in ipairs(encodedTable) do
-                if value == "Colossal" or value == "Armored" or value == "Female" or value == "Beast" or value == "Jaw" or value == "Attack" or value == "Warhammer" or value == "Cart" then
-                    titanMarkers[value] = Drawing.new("Circle")
-                    titanMarkers[value].Radius = 50
-                    titanMarkers[value].Position = Vector2.new(rootPart.Position.X + (i * 30), rootPart.Position.Z + 100)
-                    titanMarkers[value].Color = Color3.new(0, 1, 0)
-                    titanMarkers[value].Thickness = 2
-                    titanMarkers[value].Visible = true
+        if not titansFolder then
+            for _, obj in pairs(workspace:GetChildren()) do
+                if obj:IsA("Model") and obj.Name:lower():find("titan") then
+                    titansFolder = obj.Parent or obj
+                    break
                 end
             end
         end
+        if not titansFolder then
+            titansFolder = workspace
+        end
 
-        if autoFarmEnabled then
-            for _, titan in pairs(titansFolder:GetChildren()) do
-                if titan:IsA("Model") and titan:FindFirstChild("Humanoid") and titan.Humanoid.Health > 0 then
-                    local titanRoot = titan:FindFirstChild("HumanoidRootPart") or titan:FindFirstChildWhichIsA("BasePart")
-                    if not titanRoot then continue end
+        for _, titan in pairs(titansFolder:GetDescendants()) do
+            if titan:IsA("Model") and titan:FindFirstChild("Humanoid") and titan.Humanoid.Health > 0 then
+                local titanRoot = titan:FindFirstChild("HumanoidRootPart") or titan:FindFirstChildWhichIsA("BasePart")
+                if not titanRoot then continue end
 
-                    pcall(function()
-                        rootPart.CFrame = CFrame.new(titanRoot.Position + teleportOffset)
-                    end)
+                pcall(function()
+                    rootPart.CFrame = CFrame.new(titanRoot.Position + teleportOffset)
+                end)
 
-                    local attacked = false
-                    local attackEventNames = {"BladeHit", "SwingBlade", "Attack", "Hit", "DamageEvent", "DealDamage", "BladeSwing", "Strike"}
-                    for _, eventName in ipairs(attackEventNames) do
-                        local attackEvent = game:GetService("ReplicatedStorage"):FindFirstChild(eventName)
-                        if attackEvent then
-                            pcall(function()
-                                for _ = 1, 30 do
-                                    attackEvent:FireServer(titan)
-                                    task.wait(attackSpeed)
-                                end
-                            end)
-                            attacked = true
-                            break
-                        end
-                    end
-                    if not attacked then
+                local attacked = false
+                local attackEventNames = {"BladeHit", "SwingBlade", "Attack", "Hit", "DamageEvent", "DealDamage", "BladeSwing", "Strike"}
+                for _, eventName in ipairs(attackEventNames) do
+                    local attackEvent = game:GetService("ReplicatedStorage"):FindFirstChild(eventName)
+                    if attackEvent then
                         pcall(function()
-                            titan.Humanoid:TakeDamage(1000)
+                            for _ = 1, 30 do
+                                attackEvent:FireServer(titan)
+                                task.wait(attackSpeed)
+                            end
                         end)
+                        attacked = true
+                        break
                     end
+                end
+                if not attacked then
+                    pcall(function()
+                        titan.Humanoid:TakeDamage(1000)
+                    end)
                 end
             end
         end
     end
 end)
 
--- Auto-Escape
+-- Auto-Escape مع W، A، S، D عند الإمساك
 spawn(function()
-    while task.wait(0.3) do
+    local escapeKeys = {"W", "A", "S", "D"}
+    while task.wait(0.05) do
         if not getgenv().autoescape then continue end
-        for _, v in pairs(game.Players.LocalPlayer.PlayerGui:FindFirstChild("Interface") and game.Players.LocalPlayer.PlayerGui.Interface:FindFirstChild("Buttons") and game.Players.LocalPlayer.PlayerGui.Interface.Buttons:GetChildren() or {}) do
-            if v:IsA("TextButton") then
-                local key = v.Name:sub(1, 1):upper()
+        local isGrabbed = humanoid.WalkSpeed <= 0 or humanoid:GetState() == Enum.HumanoidStateType.Ragdoll
+        
+        if isGrabbed then
+            for _, key in pairs(escapeKeys) do
                 VIM:SendKeyEvent(true, key, false, game)
-                task.wait(0.01)
+                task.wait(0.05)
                 VIM:SendKeyEvent(false, key, false, game)
+                task.wait(0.05)
             end
         end
     end
@@ -257,18 +368,49 @@ spawn(function()
     end
 end)
 
--- Camera Lock من السكربت الثاني
+-- Nape Expander
+spawn(function()
+    while task.wait(0.1) do
+        if not napeExpanderEnabled then continue end
+        local titansFolder = workspace:FindFirstChild("Titans") or workspace
+        processTitans(titansFolder)
+    end
+end)
+
+-- Titan Markers
+spawn(function()
+    local titanMarkers = {}
+    while task.wait(0.1) do
+        if not titanMarkersEnabled then
+            for _, obj in pairs(titanMarkers) do obj:Destroy() end
+            titanMarkers = {}
+            continue
+        end
+        for _, obj in pairs(titanMarkers) do obj:Destroy() end
+        titanMarkers = {}
+        for i, value in ipairs(encodedTable) do
+            if value == "Colossal" or value == "Armored" or value == "Female" or value == "Beast" or value == "Jaw" or value == "Attack" or value == "Warhammer" or value == "Cart" then
+                titanMarkers[value] = Drawing.new("Circle")
+                titanMarkers[value].Radius = 50
+                titanMarkers[value].Position = Vector2.new(rootPart.Position.X + (i * 30), rootPart.Position.Z + 100)
+                titanMarkers[value].Color = Color3.new(0, 1, 0)
+                titanMarkers[value].Thickness = 2
+                titanMarkers[value].Visible = true
+            end
+        end
+    end
+end)
+
+-- Camera Lock
 spawn(function()
     local range = 6000
     local settings = {x = 5, y = 2, z = -0.3}
     while task.wait() do
         if not cameraLockEnabled then continue end
-        if not game:GetService("UserInputService"):IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then continue end
+        if not UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then continue end
         local titan, closestDist = nil, nil
-        local titansFolder = workspace:FindFirstChild("Titans")
-        if not titansFolder then continue end
-
-        for _, opposition in pairs(titansFolder:GetChildren()) do
+        local titansFolder = workspace:FindFirstChild("Titans") or workspace
+        for _, opposition in pairs(titansFolder:GetDescendants()) do
             local titanRoot = opposition:FindFirstChild("HumanoidRootPart")
             if titanRoot then
                 local calcDist = (titanRoot.Position - rootPart.Position).Magnitude
@@ -290,5 +432,4 @@ spawn(function()
     end
 end)
 
-print("AOTR Script Loaded Successfully with All Features - Grok @ xAI")
-
+print("AOTR Script Loaded Successfully with Custom GUI - Grok @ xAI")
