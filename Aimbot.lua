@@ -3,7 +3,7 @@ local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHept
 local Window = Library.CreateLib("Aimbot & Hacks", "DarkTheme")
 
 ----------------------------------------------------------------
--- زر Toggle UI باللون الأحمر يظهر دائمًا في الزاوية العليا اليمنى
+-- زر Toggle UI باللون الأحمر الفاتح (في الزاوية العليا اليمنى)
 ----------------------------------------------------------------
 do
     local sg = Instance.new("ScreenGui")
@@ -14,7 +14,7 @@ do
     toggleBtn.Name = "ToggleUIButton"
     toggleBtn.Size = UDim2.new(0, 100, 0, 40)
     toggleBtn.Position = UDim2.new(1, -110, 0, 10)
-    toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- أحمر
+    toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 80, 80)  -- لون أحمر فاتح
     toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     toggleBtn.Text = "Hide UI"
     toggleBtn.Parent = sg
@@ -49,6 +49,16 @@ local SpeedHack = 16       -- سرعة المشي الافتراضية
 local WallHack = false     -- حالة اختراق الجدران
 local FlyEnabled = false   -- حالة الطيران
 local FlySpeed = 50        -- سرعة الطيران
+
+----------------------------------------------------------------
+-- دالة للتحقق من كون اللاعب عدو (إذا كان هناك فرق)
+----------------------------------------------------------------
+local function IsEnemy(player)
+    if not (player and player.Team and LocalPlayer.Team) then
+        return true
+    end
+    return player.Team ~= LocalPlayer.Team
+end
 
 ----------------------------------------------------------------
 -- تبويبات الواجهة باستخدام Kavo UI
@@ -115,14 +125,6 @@ end)
 -- دوال مساعدة
 ----------------------------------------------------------------
 
--- دالة التحقق من أن اللاعب من خصوم فقط (إذا كانت فرق اللعب مُفعلة)
-local function IsEnemy(player)
-    if not (player and player.Team and LocalPlayer.Team) then
-        return true
-    end
-    return player.Team ~= LocalPlayer.Team
-end
-
 -- الحصول على أقرب عدو بالنسبة لموقع الماوس (يستهدف خصوم فقط)
 local function GetClosestEnemy()
     local closestDistance = math.huge
@@ -144,7 +146,7 @@ local function GetClosestEnemy()
     return closestEnemy
 end
 
--- إنشاء hitbox على رأس العدو (جزء مرئي) وتحديث موقعه
+-- إنشاء hitbox على رأس العدو (جزء مرئي بلون وردي فاتح)
 local function CreateHitbox(player)
     if player.Character and player.Character:FindFirstChild("Head") then
         local head = player.Character.Head
@@ -157,7 +159,7 @@ local function CreateHitbox(player)
             hitbox.CanCollide = false
             hitbox.Anchored = true
             hitbox.Material = Enum.Material.Neon
-            hitbox.Color = Color3.new(1, 0, 0)
+            hitbox.Color = Color3.fromRGB(255, 150, 150)  -- لون وردي فاتح
             hitbox.Parent = workspace
         end
         hitbox.CFrame = head.CFrame
@@ -165,7 +167,7 @@ local function CreateHitbox(player)
     end
 end
 
--- إطلاق شعاع على العدو باستخدام RaycastParams بنمط Whitelist لتجاهل الجدران
+-- إطلاق شعاع على العدو باستخدام RaycastParams بنمط Whitelist لتجاهل الجدران وتثبيت الإصابة على الرأس
 local function ShootAtEnemy(target)
     if not (target and target.Character and target.Character:FindFirstChild("Head")) then return end
     local head = target.Character.Head
@@ -198,7 +200,7 @@ local function FlyPlayer()
         bv.MaxForce = Vector3.new(1e6, 1e6, 1e6)
         bv.Parent = hrp
     end
-    local moveDir = Vector3.new(0,0,0)
+    local moveDir = Vector3.new(0, 0, 0)
     if UserInputService:IsKeyDown(Enum.KeyCode.W) then
         moveDir = moveDir + Camera.CFrame.LookVector
     end
@@ -212,10 +214,10 @@ local function FlyPlayer()
         moveDir = moveDir + Camera.CFrame.RightVector
     end
     if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-        moveDir = moveDir + Vector3.new(0,1,0)
+        moveDir = moveDir + Vector3.new(0, 1, 0)
     end
     if UserInputService:IsKeyDown(Enum.KeyCode.C) then
-        moveDir = moveDir - Vector3.new(0,1,0)
+        moveDir = moveDir - Vector3.new(0, 1, 0)
     end
     if moveDir.Magnitude > 0 then
         moveDir = moveDir.Unit * FlySpeed
@@ -227,7 +229,7 @@ end
 -- الحلقة الرئيسية للتحديث (RenderStepped)
 ----------------------------------------------------------------
 RunService.RenderStepped:Connect(function()
-    -- Aimbot يعمل فقط عند الضغط على زر الفأرة الأيمن
+    -- Aimbot: يعمل فقط عند الضغط على زر الفأرة الأيمن، مما يسمح بتحريك الماوس عند عدم الضغط
     if Aimbot.Enabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
         local target = GetClosestEnemy()
         if target and target.Character and target.Character:FindFirstChild("Head") then
@@ -240,7 +242,7 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- تحديث ESP: إنشاء أو تحديث hitbox على رأس كل عدو (للخصوم فقط)
+    -- تحديث ESP: إنشاء أو تحديث hitbox على رأس كل خصم (يستهدف الخصوم فقط)
     if Aimbot.ESPEnabled then
         for _, player in pairs(Players:GetPlayers()) do
             if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") and IsEnemy(player) then
@@ -249,7 +251,7 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- تحديث حركة الطيران
+    -- تحديث حركة الطيران إذا كانت مفعلّة
     if FlyEnabled then
         FlyPlayer()
     end
