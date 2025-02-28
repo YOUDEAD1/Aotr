@@ -1,61 +1,108 @@
+-- تحميل مكتبة Kavo UI
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("Aimbot & Hacks", "DarkTheme")
+
 -- تعريف الخدمات
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
+local Humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
 
--- إعدادات السكريبت
+-- إعدادات السكربت
 local Aimbot = {
-    Enabled = false,           -- حالة السكريبت
-    Locked = nil,              -- الهدف المقفل
-    Connections = {},          -- تخزين الاتصالات
-    WallCheck = false,         -- التحقق من الجدران (false = يمكن ضرب عدو وراء جدار)
-    ESPEnabled = true,         -- تفعيل ESP
-    Highlights = {}            -- تخزين تسليط الضوء
+    Enabled = false,
+    Locked = nil,
+    ESPEnabled = true,
+    HitboxSize = 7,  -- حجم المربع حول الأعداء
+    Highlights = {}
 }
 
--- إنشاء GUI
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AimbotGUI"
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+local SpeedHack = 16  -- السرعة الافتراضية
+local WallHack = false
 
-local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 150, 0, 40)
-Frame.Position = UDim2.new(0, 10, 0, 10) -- أعلى يسار
-Frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-Frame.Parent = ScreenGui
+-- واجهة Aimbot
+local AimbotTab = Window:NewTab("Aimbot")
+local AimbotSection = AimbotTab:NewSection("Settings")
 
-local StatusLabel = Instance.new("TextLabel")
-StatusLabel.Size = UDim2.new(1, 0, 1, 0)
-StatusLabel.Text = "Aimbot: OFF (P)"
-StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-StatusLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-StatusLabel.TextScaled = true
-StatusLabel.Parent = Frame
+AimbotSection:NewToggle("Enable Aimbot", "تفعيل/إيقاف Aimbot", function(state)
+    Aimbot.Enabled = state
+end)
 
--- دالة ESP لتسليط الضوء على الأعداء
+AimbotSection:NewToggle("Enable ESP", "تفعيل/إيقاف رؤية الأعداء", function(state)
+    Aimbot.ESPEnabled = state
+end)
+
+AimbotSection:NewSlider("Hitbox Size", "تحكم في حجم المربع حول الأعداء", 15, 5, function(value)
+    Aimbot.HitboxSize = value
+end)
+
+-- واجهة السرعة
+local SpeedTab = Window:NewTab("Speed Hack")
+local SpeedSection = SpeedTab:NewSection("Control Speed")
+
+SpeedSection:NewSlider("Speed", "تحكم في سرعة اللاعب", 200, 1, function(value)
+    SpeedHack = value
+    if Humanoid then
+        Humanoid.WalkSpeed = SpeedHack
+    end
+end)
+
+-- واجهة اختراق الجدران
+local WallHackTab = Window:NewTab("Wall Hack")
+local WallHackSection = WallHackTab:NewSection("Wall Hack Settings")
+
+WallHackSection:NewToggle("Enable Wall Hack", "تفعيل/إيقاف اختراق الجدران", function(state)
+    WallHack = state
+    if WallHack then
+        for _, v in pairs(LocalPlayer.Character:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.CanCollide = false
+            end
+        end
+    else
+        for _, v in pairs(LocalPlayer.Character:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.CanCollide = true
+            end
+        end
+    end
+end)
+
+-- دالة ESP مع المربع الكبير (Hitbox)
 local function UpdateESP()
-    -- إزالة تسليط الضوء القديم
     for _, highlight in pairs(Aimbot.Highlights) do
         highlight:Destroy()
     end
     Aimbot.Highlights = {}
 
-    -- إضافة تسليط الضوء للأعداء
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Team ~= LocalPlayer.Team then
             local character = player.Character
             local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-            if character and humanoid and humanoid.Health > 0 then
-                local highlight = Instance.new("Highlight")
-                highlight.FillColor = Color3.fromRGB(255, 255, 255) -- لون أبيض
-                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-                highlight.FillTransparency = 0.5
-                highlight.OutlineTransparency = 0
-                highlight.Adornee = character
-                highlight.Parent = character
-                table.insert(Aimbot.Highlights, highlight)
+            local head = character and character:FindFirstChild("Head")
+
+            if character and humanoid and head and humanoid.Health > 0 then
+                -- إنشاء المربع الكبير حول العدو
+                local hitbox = Instance.new("Part")
+                hitbox.Size = Vector3.new(Aimbot.HitboxSize, Aimbot.HitboxSize, Aimbot.HitboxSize)
+                hitbox.Transparency = 0.7
+                hitbox.CanCollide = false
+                hitbox.Anchored = true
+                hitbox.Color = Color3.fromRGB(255, 0, 0)
+                hitbox.Material = Enum.Material.ForceField
+                hitbox.Parent = character
+                hitbox.Position = head.Position
+
+                -- تحديث المربع مع حركة العدو
+                RunService.RenderStepped:Connect(function()
+                    if hitbox and head then
+                        hitbox.Position = head.Position
+                    end
+                end)
+
+                table.insert(Aimbot.Highlights, hitbox)
             end
         end
     end
@@ -63,7 +110,7 @@ end
 
 -- دالة للحصول على أقرب عدو
 local function GetClosestEnemy()
-    local closestDistance = 90 -- نطاق الرؤية
+    local closestDistance = 90
     local closestEnemy = nil
     local mousePos = UserInputService:GetMouseLocation()
 
@@ -78,22 +125,9 @@ local function GetClosestEnemy()
                 local screenPos, onScreen = Camera:WorldToViewportPoint(headPos)
                 local distance = (mousePos - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
 
-                -- إذا كان WallCheck مفعل، تحقق من الجدران
-                if Aimbot.WallCheck then
-                    local ray = Ray.new(Camera.CFrame.Position, (headPos - Camera.CFrame.Position).Unit * 1000)
-                    local hit = workspace:FindPartOnRayWithIgnoreList(ray, {LocalPlayer.Character})
-                    if hit and hit:IsDescendantOf(character) then
-                        if distance < closestDistance and onScreen then
-                            closestDistance = distance
-                            closestEnemy = player
-                        end
-                    end
-                else
-                    -- تجاهل الجدران إذا كان WallCheck معطل
-                    if distance < closestDistance and onScreen then
-                        closestDistance = distance
-                        closestEnemy = player
-                    end
+                if distance < closestDistance and onScreen then
+                    closestDistance = distance
+                    closestEnemy = player
                 end
             end
         end
@@ -103,10 +137,9 @@ end
 
 -- تشغيل Aimbot وESP
 local function StartAimbot()
-    -- تشغيل Aimbot
-    Aimbot.Connections.RenderStepped = RunService.RenderStepped:Connect(function()
+    RunService.RenderStepped:Connect(function()
         if Aimbot.Enabled then
-            local target = GetClosestEnemy() -- تحديث الهدف في كل إطار
+            local target = GetClosestEnemy()
             if target then
                 local headPos = target.Character.Head.Position
                 Camera.CFrame = CFrame.new(Camera.CFrame.Position, headPos)
@@ -117,45 +150,11 @@ local function StartAimbot()
         end
     end)
 
-    -- تشغيل ESP
     if Aimbot.ESPEnabled then
-        Aimbot.Connections.ESPUpdate = RunService.RenderStepped:Connect(UpdateESP)
+        RunService.RenderStepped:Connect(UpdateESP)
     end
 end
 
--- إيقاف Aimbot وESP
-local function StopAimbot()
-    Aimbot.Locked = nil
-    if Aimbot.Connections.RenderStepped then
-        Aimbot.Connections.RenderStepped:Disconnect()
-    end
-    if Aimbot.Connections.ESPUpdate then
-        Aimbot.Connections.ESPUpdate:Disconnect()
-    end
-    -- إزالة تسليط الضوء عند الإيقاف
-    for _, highlight in pairs(Aimbot.Highlights) do
-        highlight:Destroy()
-    end
-    Aimbot.Highlights = {}
-end
+StartAimbot()
 
--- التحكم بمفتاح P
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.P then
-        Aimbot.Enabled = not Aimbot.Enabled
-        if Aimbot.Enabled then
-            StartAimbot()
-            StatusLabel.Text = "Aimbot: ON (P)"
-            StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-            print("Aimbot Enabled")
-        else
-            StopAimbot()
-            StatusLabel.Text = "Aimbot: OFF (P)"
-            StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-            print("Aimbot Disabled")
-        end
-    end
-end)
-
--- بدء السكريبت
-print("Aimbot Loaded. Press P to toggle.")
+print("Script Loaded Successfully!")
