@@ -161,7 +161,8 @@ local NapeLocation
 local TeleportEnabled = false
 local TitanFarmerEnabled = false
 local ESPEnabled = false
-local MaxTeleportDistance = 1000 -- زيادة المسافة القصوى للبحث عن Nape
+local MaxTeleportDistance = 200 -- تقليل المسافة القصوى للبحث عن Nape
+local SafePosition = Vector3.new(0, 50, 0) -- موقع آمن لإعادة اللاعب (يمكن تعديله)
 
 local Highlights = {}
 
@@ -274,6 +275,17 @@ local function attackTitan()
     end
 end
 
+-- دالة لإعادة اللاعب إلى موقع آمن
+local function resetPlayerPosition()
+    local rootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if rootPart then
+        rootPart.CFrame = CFrame.new(SafePosition)
+        print("[DEBUG] Player reset to safe position: " .. tostring(SafePosition))
+    else
+        print("[DEBUG] HumanoidRootPart not found for reset")
+    end
+end
+
 -- دالة للنقل الآني مع الهجوم التلقائي
 local function teleportAndKill()
     local success, err = pcall(function()
@@ -291,7 +303,9 @@ local function teleportAndKill()
                     print("[DEBUG] HumanoidRootPart not found for teleport")
                 end
             else
-                print("[DEBUG] No Nape found, pausing teleport")
+                print("[DEBUG] No Nape found, resetting player position")
+                resetPlayerPosition()
+                wait(2)
             end
         else
             print("[DEBUG] Player not ready (missing components or dead), pausing teleport")
@@ -356,10 +370,16 @@ local function toggleTitanFarmer()
                         if not currentTitan or not currentTitan:FindFirstChildOfClass("Humanoid") or currentTitan:FindFirstChildOfClass("Humanoid").Health <= 0 then
                             removeBodyObjects(bodyPos, bodyGyro)
                             wait(0.1)
-                            bodyPos, bodyGyro = teleportToNape()
+                            findClosestNape()
                             if NapeLocation then
-                                wait(0.2)
-                                attackTitan()
+                                bodyPos, bodyGyro = teleportToNape()
+                                if NapeLocation then
+                                    wait(0.2)
+                                    attackTitan()
+                                end
+                            else
+                                print("[DEBUG] No Nape found, resetting player position")
+                                resetPlayerPosition()
                             end
                         elseif NapeLocation and bodyPos and bodyGyro then
                             bodyPos.Position = NapeLocation.Position + Vector3.new(0, 5, 0)
@@ -440,7 +460,7 @@ local function teleportToRefill()
     if gasTank then
         local rootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if rootPart then
-            rootPart.CFrame = gasTank.CFrame + Vector3.new(0, 25, 0)
+            rootPart.CFrame = CFrame.new(gasTank.Position + Vector3.new(0, 25, 0))
             print("[DEBUG] Teleported to Refill")
         else
             print("[DEBUG] HumanoidRootPart not found for Refill")
