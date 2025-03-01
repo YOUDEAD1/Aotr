@@ -161,7 +161,7 @@ local NapeLocation
 local TeleportEnabled = false
 local TitanFarmerEnabled = false
 local ESPEnabled = false
-local MaxTeleportDistance = 500 -- مسافة معقولة لتجنب النقل البعيد
+local MaxTeleportDistance = 1000 -- زيادة المسافة القصوى للبحث عن Nape
 
 local Highlights = {}
 
@@ -178,13 +178,8 @@ local function isPlayerReady()
         print("[DEBUG] Humanoid or HumanoidRootPart not found or player dead")
         return false
     end
-    local tool = character:FindFirstChildOfClass("Tool")
-    if tool and tool.Name:lower():find("odm") then
-        print("[DEBUG] ODM Gear found and ready")
-        return true
-    end
-    print("[DEBUG] ODM Gear not found")
-    return false
+    print("[DEBUG] Player ready to teleport")
+    return true
 end
 
 -- دالة للعثور على أقرب Nape حي فقط
@@ -215,9 +210,17 @@ local function findClosestNape()
                             minDistance = distance
                             closestNape = nape
                         end
+                    else
+                        print("[DEBUG] Nape not found in Hit folder for " .. titan.Name)
                     end
+                else
+                    print("[DEBUG] Hit folder not found for " .. titan.Name)
                 end
+            else
+                print("[DEBUG] Hitboxes folder not found for " .. titan.Name)
             end
+        else
+            print("[DEBUG] No humanoid or titan dead: " .. titan.Name)
         end
     end
     NapeLocation = closestNape
@@ -291,7 +294,7 @@ local function teleportAndKill()
                 print("[DEBUG] No Nape found, pausing teleport")
             end
         else
-            print("[DEBUG] Player not ready (no ODM Gear or dead), pausing teleport")
+            print("[DEBUG] Player not ready (missing components or dead), pausing teleport")
         end
     end)
     if not success then
