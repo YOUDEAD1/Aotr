@@ -1,449 +1,477 @@
-local a = Instance.new("ScreenGui")
-local b = Instance.new("Frame")
-local c = Instance.new("TextLabel")
-local d = Instance.new("ScrollingFrame")
-local e = Instance.new("TextLabel")
-local f = Instance.new("TextLabel")
-local g = Instance.new("TextButton")
-local h = Instance.new("TextButton")
-local i = Instance.new("TextButton")
-local j = Instance.new("TextLabel")
-local k = Instance.new("TextButton")
-local l = Instance.new("BoolValue")
-a.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-a.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-b.Parent = a
-b.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-b.BorderColor3 = Color3.fromRGB(0, 0, 0)
-b.BorderSizePixel = 0
-b.Position = UDim2.new(0.4164823, 0, 0.0479591824, 0)
-b.Size = UDim2.new(0, 340, 0, 329)
-b.Style = Enum.FrameStyle.RobloxRound
-c.Name = "Title"
-c.Parent = b
-c.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-c.BackgroundTransparency = 1.000
-c.BorderColor3 = Color3.fromRGB(0, 0, 0)
-c.BorderSizePixel = 0
-c.Position = UDim2.new(0.0207602102, 0, -0.00166114408, 0)
-c.Size = UDim2.new(0, 312, 0, 50)
-c.Font = Enum.Font.Unknown
-c.Text = "Tekkit AotR"
-c.TextColor3 = Color3.fromRGB(255, 255, 255)
-c.TextScaled = true
-c.TextSize = 1.000
-c.TextWrapped = true
-d.Parent = b
-d.Active = true
-d.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-d.BackgroundTransparency = 1.000
-d.BorderColor3 = Color3.fromRGB(0, 0, 0)
-d.BorderSizePixel = 0
-d.Position = UDim2.new(0.0415333472, 0, 0.162598208, 0)
-d.Size = UDim2.new(0, 305, 0, 256)
-d.VerticalScrollBarPosition = Enum.VerticalScrollBarPosition.Left
-e.Name = "Teleport"
-e.Parent = d
-e.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-e.BackgroundTransparency = 1.000
-e.BorderColor3 = Color3.fromRGB(0, 0, 0)
-e.BorderSizePixel = 0
-e.Position = UDim2.new(0.0799999982, 0, 0.0299999993, 0)
-e.Size = UDim2.new(0, 200, 0.0599999987, 0)
-e.Font = Enum.Font.Fondamento
-e.Text = "Nape Teleport"
-e.TextColor3 = Color3.fromRGB(148, 148, 148)
-e.TextSize = 25.000
-e.TextWrapped = true
-f.Name = "Titan Farmer"
-f.Parent = d
-f.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-f.BackgroundTransparency = 1.000
-f.BorderColor3 = Color3.fromRGB(0, 0, 0)
-f.BorderSizePixel = 0
-f.Position = UDim2.new(0.0804597735, 0, 0.104999997, 0)
-f.Size = UDim2.new(0, 200, 0.0599999987, 0)
-f.Font = Enum.Font.Unknown
-f.Text = "Titan Farmer"
-f.TextColor3 = Color3.fromRGB(148, 148, 148)
-f.TextSize = 20.000
-f.TextWrapped = true
-g.Name = "tpButton"
-g.Parent = d
-g.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
-g.BorderColor3 = Color3.fromRGB(0, 0, 0)
-g.BorderSizePixel = 2
-g.Position = UDim2.new(0.699999988, 0, 0.0350000001, 0)
-g.Size = UDim2.new(0, 30, 0, 30)
-g.Font = Enum.Font.SourceSans
-g.Text = ""
-g.TextColor3 = Color3.fromRGB(0, 0, 0)
-g.TextSize = 14.000
-h.Name = "tpButtonF"
-h.Parent = d
-h.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
-h.BorderColor3 = Color3.fromRGB(0, 0, 0)
-h.BorderSizePixel = 2
-h.Position = UDim2.new(0.699999928, 0, 0.10900782, 0)
-h.Size = UDim2.new(0, 30, 0, 30)
-h.Font = Enum.Font.SourceSans
-h.Text = ""
-h.TextColor3 = Color3.fromRGB(0, 0, 0)
-h.TextSize = 14.000
-i.Name = "refill"
-i.Parent = d
-i.BackgroundColor3 = Color3.fromRGB(94, 94, 94)
-i.BackgroundTransparency = 0.800
-i.BorderColor3 = Color3.fromRGB(0, 0, 0)
-i.BorderSizePixel = 0
-i.Position = UDim2.new(0.230000004, 0, 0.264999986, 0)
-i.Size = UDim2.new(0, 100, 0, 25)
-i.Font = Enum.Font.Unknown
-i.Text = "Tp to Refill"
-i.TextColor3 = Color3.fromRGB(148, 148, 148)
-i.TextScaled = true
-i.TextSize = 27.000
-i.TextWrapped = true
-j.Name = "esp"
-j.Parent = d
-j.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-j.BackgroundTransparency = 1.000
-j.BorderColor3 = Color3.fromRGB(0, 0, 0)
-j.BorderSizePixel = 0
-j.Position = UDim2.new(0.0542302355, 0, 0.181999996, 0)
-j.Size = UDim2.new(0, 200, 0.0599999987, 0)
-j.Font = Enum.Font.Unknown
-j.Text = "Titan ESP"
-j.TextColor3 = Color3.fromRGB(148, 148, 148)
-j.TextSize = 23.000
-j.TextWrapped = true
-k.Name = "tpButtonE"
-k.Parent = d
-k.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
-k.BorderColor3 = Color3.fromRGB(0, 0, 0)
-k.BorderSizePixel = 2
-k.Position = UDim2.new(0.699999988, 0, 0.185000002, 0)
-k.Size = UDim2.new(0, 30, 0, 30)
-k.Font = Enum.Font.SourceSans
-k.Text = ""
-k.TextColor3 = Color3.fromRGB(0, 0, 0)
-k.TextSize = 14.000
-b.Draggable = true
-b.Selectable = true
-b.Active = true
-local a = game:GetService("Players")
-local a = a.LocalPlayer
-local c = game:GetService("Workspace")
-local d = game:GetService("UserInputService")
-local e
-local f = false
-local j = 1250
-local l
-local m
-local m = false
-local n = math.huge
-local o = false
-local o = {}
-local function o()
-    local a = a.Character or a.CharacterAdded:Wait()
-    local a = a:WaitForChild("HumanoidRootPart")
-    if a and a:IsA("BasePart") then
-        local a = a.Position
-        print("HumanoidRootPart Location:", a)
-        return a
+local workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+local DataStoreService = game:GetService("DataStoreService")
+local SettingsStore = DataStoreService:GetDataStore("TekkitAotRSettings")
+
+-- دالة للعثور على Nape
+local function findNape(hitFolder)
+    return hitFolder:FindFirstChild("Nape")
+end
+
+-- دالة لتوسيع Hitbox الخاص بـ Nape
+local function expandNapeHitbox(hitFolder)
+    local napeObject = findNape(hitFolder)
+    if napeObject then
+        napeObject.Size = Vector3.new(105, 120, 100)
+        napeObject.Transparency = 0.96
+        napeObject.Color = Color3.new(1, 1, 1)
+        napeObject.Material = Enum.Material.Neon
+        napeObject.CanCollide = false
+        napeObject.Anchored = false
+    end
+end
+
+-- دالة لمعالجة العمالقة
+local function processTitans(titansBasePart)
+    for _, titan in ipairs(titansBasePart:GetChildren()) do
+        local hitboxesFolder = titan:FindFirstChild("Hitboxes")
+        if hitboxesFolder then
+            local hitFolder = hitboxesFolder:FindFirstChild("Hit")
+            if hitFolder then
+                expandNapeHitbox(hitFolder)
+            end
+        end
+    end
+end
+
+-- إنشاء واجهة المستخدم الرسومية (GUI)
+local ScreenGui = Instance.new("ScreenGui")
+local Frame = Instance.new("Frame")
+local Title = Instance.new("TextLabel")
+local ScrollingFrame = Instance.new("ScrollingFrame")
+local TeleportLabel = Instance.new("TextLabel")
+local TitanFarmerLabel = Instance.new("TextLabel")
+local tpButton = Instance.new("TextButton")
+local tpButtonF = Instance.new("TextButton")
+local refillButton = Instance.new("TextButton")
+local espLabel = Instance.new("TextLabel")
+local tpButtonE = Instance.new("TextButton")
+local closeButton = Instance.new("TextButton") -- زر X
+local minimizeButton = Instance.new("TextButton") -- زر -
+local maximizeButton = Instance.new("TextButton") -- زر +
+
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+Frame.Parent = ScreenGui
+Frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+Frame.BorderSizePixel = 0
+Frame.Position = UDim2.new(0.4164823, 0, 0.0479591824, 0)
+Frame.Size = UDim2.new(0, 340, 0, 329)
+Frame.Style = Enum.FrameStyle.RobloxRound
+Frame.Draggable = true
+Frame.Selectable = true
+Frame.Active = true
+
+Title.Name = "Title"
+Title.Parent = Frame
+Title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Title.BackgroundTransparency = 1.000
+Title.BorderColor3 = Color3.fromRGB(0, 0, 0)
+Title.BorderSizePixel = 0
+Title.Position = UDim2.new(0.0207602102, 0, -0.00166114408, 0)
+Title.Size = UDim2.new(0, 312, 0, 50)
+Title.Font = Enum.Font.Unknown
+Title.Text = "Tekkit AotR"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextScaled = true
+Title.TextSize = 1.000
+Title.TextWrapped = true
+
+ScrollingFrame.Parent = Frame
+ScrollingFrame.Active = true
+ScrollingFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+ScrollingFrame.BackgroundTransparency = 1.000
+ScrollingFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+ScrollingFrame.BorderSizePixel = 0
+ScrollingFrame.Position = UDim2.new(0.0415333472, 0, 0.162598208, 0)
+ScrollingFrame.Size = UDim2.new(0, 305, 0, 256)
+ScrollingFrame.VerticalScrollBarPosition = Enum.VerticalScrollBarPosition.Left
+
+TeleportLabel.Name = "Teleport"
+TeleportLabel.Parent = ScrollingFrame
+TeleportLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+TeleportLabel.BackgroundTransparency = 1.000
+TeleportLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+TeleportLabel.BorderSizePixel = 0
+TeleportLabel.Position = UDim2.new(0.0799999982, 0, 0.0299999993, 0)
+TeleportLabel.Size = UDim2.new(0, 200, 0.0599999987, 0)
+TeleportLabel.Font = Enum.Font.Fondamento
+TeleportLabel.Text = "Nape Teleport"
+TeleportLabel.TextColor3 = Color3.fromRGB(148, 148, 148)
+TeleportLabel.TextSize = 25.000
+TeleportLabel.TextWrapped = true
+
+TitanFarmerLabel.Name = "Titan Farmer"
+TitanFarmerLabel.Parent = ScrollingFrame
+TitanFarmerLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+TitanFarmerLabel.BackgroundTransparency = 1.000
+TitanFarmerLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+TitanFarmerLabel.BorderSizePixel = 0
+TitanFarmerLabel.Position = UDim2.new(0.0804597735, 0, 0.104999997, 0)
+TitanFarmerLabel.Size = UDim2.new(0, 200, 0.0599999987, 0)
+TitanFarmerLabel.Font = Enum.Font.Unknown
+TitanFarmerLabel.Text = "Titan Farmer"
+TitanFarmerLabel.TextColor3 = Color3.fromRGB(148, 148, 148)
+TitanFarmerLabel.TextSize = 20.000
+TitanFarmerLabel.TextWrapped = true
+
+tpButton.Name = "tpButton"
+tpButton.Parent = ScrollingFrame
+tpButton.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
+tpButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
+tpButton.BorderSizePixel = 2
+tpButton.Position = UDim2.new(0.699999988, 0, 0.0350000001, 0)
+tpButton.Size = UDim2.new(0, 30, 0, 30)
+tpButton.Font = Enum.Font.SourceSans
+tpButton.Text = ""
+tpButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+tpButton.TextSize = 14.000
+
+tpButtonF.Name = "tpButtonF"
+tpButtonF.Parent = ScrollingFrame
+tpButtonF.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
+tpButtonF.BorderColor3 = Color3.fromRGB(0, 0, 0)
+tpButtonF.BorderSizePixel = 2
+tpButtonF.Position = UDim2.new(0.699999928, 0, 0.10900782, 0)
+tpButtonF.Size = UDim2.new(0, 30, 0, 30)
+tpButtonF.Font = Enum.Font.SourceSans
+tpButtonF.Text = ""
+tpButtonF.TextColor3 = Color3.fromRGB(0, 0, 0)
+tpButtonF.TextSize = 14.000
+
+refillButton.Name = "refill"
+refillButton.Parent = ScrollingFrame
+refillButton.BackgroundColor3 = Color3.fromRGB(94, 94, 94)
+refillButton.BackgroundTransparency = 0.800
+refillButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
+refillButton.BorderSizePixel = 0
+refillButton.Position = UDim2.new(0.230000004, 0, 0.264999986, 0)
+refillButton.Size = UDim2.new(0, 100, 0, 25)
+refillButton.Font = Enum.Font.Unknown
+refillButton.Text = "Tp to Refill"
+refillButton.TextColor3 = Color3.fromRGB(148, 148, 148)
+refillButton.TextScaled = true
+refillButton.TextSize = 27.000
+refillButton.TextWrapped = true
+
+espLabel.Name = "esp"
+espLabel.Parent = ScrollingFrame
+espLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+espLabel.BackgroundTransparency = 1.000
+espLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+espLabel.BorderSizePixel = 0
+espLabel.Position = UDim2.new(0.0542302355, 0, 0.181999996, 0)
+espLabel.Size = UDim2.new(0, 200, 0.0599999987, 0)
+espLabel.Font = Enum.Font.Unknown
+espLabel.Text = "Titan ESP"
+espLabel.TextColor3 = Color3.fromRGB(148, 148, 148)
+espLabel.TextSize = 23.000
+espLabel.TextWrapped = true
+
+tpButtonE.Name = "tpButtonE"
+tpButtonE.Parent = ScrollingFrame
+tpButtonE.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
+tpButtonE.BorderColor3 = Color3.fromRGB(0, 0, 0)
+tpButtonE.BorderSizePixel = 2
+tpButtonE.Position = UDim2.new(0.699999988, 0, 0.185000002, 0)
+tpButtonE.Size = UDim2.new(0, 30, 0, 30)
+tpButtonE.Font = Enum.Font.SourceSans
+tpButtonE.Text = ""
+tpButtonE.TextColor3 = Color3.fromRGB(0, 0, 0)
+tpButtonE.TextSize = 14.000
+
+closeButton.Name = "CloseButton"
+closeButton.Parent = Frame
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+closeButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
+closeButton.Position = UDim2.new(0.9, 0, 0, 0)
+closeButton.Size = UDim2.new(0, 30, 0, 30)
+closeButton.Font = Enum.Font.SourceSansBold
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.TextSize = 20
+
+minimizeButton.Name = "MinimizeButton"
+minimizeButton.Parent = Frame
+minimizeButton.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
+minimizeButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
+minimizeButton.Position = UDim2.new(0.8, 0, 0, 0)
+minimizeButton.Size = UDim2.new(0, 30, 0, 30)
+minimizeButton.Font = Enum.Font.SourceSansBold
+minimizeButton.Text = "-"
+minimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeButton.TextSize = 20
+
+maximizeButton.Name = "MaximizeButton"
+maximizeButton.Parent = ScreenGui
+maximizeButton.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
+maximizeButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
+maximizeButton.Position = UDim2.new(0.4164823, 0, 0.0479591824, 0)
+maximizeButton.Size = UDim2.new(0, 30, 0, 30)
+maximizeButton.Font = Enum.Font.SourceSansBold
+maximizeButton.Text = "+"
+maximizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+maximizeButton.TextSize = 20
+maximizeButton.Visible = false
+
+-- متغيرات التحكم
+local NapeLocation
+local TitanFarmerEnabled = false
+local MaxTeleportDistance = 1250
+local ESPEnabled = false
+local TeleportEnabled = false
+local Highlights = {}
+
+-- دالة للحصول على موقع اللاعب
+local function getPlayerPosition()
+    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local rootPart = character:WaitForChild("HumanoidRootPart")
+    if rootPart and rootPart:IsA("BasePart") then
+        return rootPart.Position
     else
-        warn("HumanoidRootPart not found for LocalPlayer.")
+        warn("HumanoidRootPart not found.")
         return nil
     end
 end
-local function p()
-    local a = c:FindFirstChild("Titans")
-    local b = nil
-    local c = math.huge
-    if a then
-        local d = o()
-        for a, a in ipairs(a:GetChildren()) do
-            if a:IsA("Model") and a:FindFirstChildOfClass("Humanoid") then
-                local a = a:FindFirstChild("Hitboxes")
-                if a then
-                    local a = a:FindFirstChild("Hit")
-                    if a then
-                        local a = a:FindFirstChild("Nape")
-                        if a then
-                            local d = (a.Position - d).Magnitude
-                            if d < c and d <= n then
-                                c = d
-                                b = a
+
+-- دالة للعثور على أقرب Nape
+local function findClosestNape()
+    local titansFolder = workspace:FindFirstChild("Titans")
+    local closestNape = nil
+    local minDistance = math.huge
+    if titansFolder then
+        local playerPos = getPlayerPosition()
+        for _, titan in ipairs(titansFolder:GetChildren()) do
+            if titan:IsA("Model") and titan:FindFirstChildOfClass("Humanoid") then
+                local hitboxes = titan:FindFirstChild("Hitboxes")
+                if hitboxes then
+                    local hit = hitboxes:FindFirstChild("Hit")
+                    if hit then
+                        local nape = hit:FindFirstChild("Nape")
+                        if nape then
+                            local distance = (nape.Position - playerPos).Magnitude
+                            if distance < minDistance and distance <= MaxTeleportDistance then
+                                minDistance = distance
+                                closestNape = nape
                             end
                         end
                     end
                 end
             end
         end
-    else
-        warn("Titans folder not found in Workspace.")
     end
-    if b then
-        l = b
-        print("Closest NapeLocation set to:", l.Position)
-    else
-        warn("No Nape part found within maximum teleport distance.")
+    if closestNape then
+        NapeLocation = closestNape
     end
-    return l
+    return NapeLocation
 end
-local function n()
-    if l then
-        local a = a.Character and a.Character:FindFirstChild("HumanoidRootPart")
-        if a then
-            local b = Instance.new("BodyPosition")
-            b.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            b.Position = l.Position + Vector3.new(0, 450, 0)
-            b.Parent = a
-            local c = Instance.new("BodyGyro")
-            c.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-            c.CFrame = a.CFrame
-            c.Parent = a
-            return b, c
-        else
-            warn("Nape not found.")
-            return nil, nil
+
+-- دالة للنقل الآني البسيط
+local function simpleTeleport()
+    findClosestNape()
+    if NapeLocation then
+        local rootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if rootPart then
+            rootPart.CFrame = CFrame.new(NapeLocation.Position + Vector3.new(0, 10, 0))
         end
     end
 end
-local function o(a, b)
-    if a then
-        a:Destroy()
-    end
-    if b then
-        b:Destroy()
-    end
-end
-local function q()
-    local a = a.Character and a.Character:FindFirstChild("HumanoidRootPart")
-    if a then
-        local b = a.Position
-        local function c(b)
-            a.CFrame = CFrame.new(b)
+
+-- دالة للنقل الآني إلى Nape مع BodyPosition
+local function teleportToNape()
+    if NapeLocation then
+        local rootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if rootPart then
+            local bodyPos = Instance.new("BodyPosition")
+            bodyPos.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            bodyPos.Position = NapeLocation.Position + Vector3.new(0, 450, 0)
+            bodyPos.Parent = rootPart
+            local bodyGyro = Instance.new("BodyGyro")
+            bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+            bodyGyro.CFrame = rootPart.CFrame
+            bodyGyro.Parent = rootPart
+            return bodyPos, bodyGyro
         end
-        local function a()
-            p()
-            if l then
-                local a = l.Position
-                local d = (a - b) / 4
-                local d = d * 3
-                for e = 1, 2 do
-                    c(b + d)
-                    wait(0.001)
-                    c(a)
-                    c(a)
-                    c(a)
-                    c(a)
-                end
-            end
-        end
-        a()
     end
+    return nil, nil
 end
-local function r()
-    m = not m
-    if m then
-        print("Teleportation Enabled")
-        p()
-        local b, c = n()
+
+-- دالة لإزالة BodyPosition وBodyGyro
+local function removeBodyObjects(bodyPos, bodyGyro)
+    if bodyPos then bodyPos:Destroy() end
+    if bodyGyro then bodyGyro:Destroy() end
+end
+
+-- تفعيل/تعطيل Titan Farmer
+local function toggleTitanFarmer()
+    TitanFarmerEnabled = not TitanFarmerEnabled
+    if TitanFarmerEnabled then
+        findClosestNape()
+        local bodyPos, bodyGyro = teleportToNape()
         spawn(function()
-            while m do
+            while TitanFarmerEnabled do
                 wait(1)
-                p()
-                if b and c then
-                    b.Position = l.Position + Vector3.new(0, 300, 0)
-                    c.CFrame = a.Character.HumanoidRootPart.CFrame
+                findClosestNape()
+                if bodyPos and bodyGyro then
+                    bodyPos.Position = NapeLocation.Position + Vector3.new(0, 300, 0)
+                    bodyGyro.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
                 end
             end
-            o(b, c)
+            removeBodyObjects(bodyPos, bodyGyro)
         end)
-    else
-        print("Teleportation Disabled")
+    end
+    tpButtonF.BackgroundColor3 = TitanFarmerEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
+    saveSettings()
+end
+
+-- دالة لإنشاء Highlight
+local function createHighlight(model, color, transparency)
+    if not model:FindFirstChildOfClass("Highlight") then
+        local highlight = Instance.new("Highlight")
+        highlight.Adornee = model
+        highlight.FillTransparency = transparency or 0.5
+        highlight.FillColor = color or Color3.new(1, 1, 1)
+        highlight.OutlineTransparency = transparency or 0
+        highlight.OutlineColor = color or Color3.new(1, 1, 1)
+        highlight.Enabled = ESPEnabled
+        highlight.Parent = model
+        table.insert(Highlights, highlight)
     end
 end
-h.MouseButton1Click:Connect(function()
-    r()
-    h.BackgroundColor3 = m and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
-end)
-d.InputEnded:Connect(function(a)
-    if (a.UserInputType == Enum.UserInputType.MouseButton1 or a.UserInputType == Enum.UserInputType.Touch) and m == true then
-        q()
-    end
-end)
-local h = {}
-local l = false
-local function m(a, b, c)
-    if not a:FindFirstChildOfClass("Highlight") then
-        local d = Instance.new("Highlight")
-        d.Adornee = a
-        d.FillTransparency = c or 0.5
-        d.FillColor = b or Color3.new(1, 1, 1)
-        d.OutlineTransparency = c or 0
-        d.OutlineColor = b or Color3.new(1, 1, 1)
-        d.Enabled = l
-        d.Parent = a
-        table.insert(h, d)
-        print("Highlight created for model: " .. a.Name)
-    else
-        print("Highlight already exists for model: " .. a.Name)
-    end
-end
-local function n(a)
-    local b = {"LowerTorso", "LeftUpperArm", "RightUpperLeg", "LeftLowerLeg", "LeftUpperLeg", "RightLowerLeg", "LeftFoot", "RightLowerArm", "UpperTorso", "LeftLowerArm", "RightUpperArm", "LeftHand", "RightFoot", "RightHand", "Head"}
-    for b, b in ipairs(b) do
-        local a = a:FindFirstChild(b)
-        if a and a:IsA("BasePart") then
-            m(a.Parent, Color3.new(1, 1, 1), 0.65)
-        else
-            print("Part not found or not a BasePart: " .. b)
-        end
-    end
-end
-local function m()
-    local a = workspace:FindFirstChild("Titans")
-    if a then
-        for a, a in ipairs(a:GetChildren()) do
-            if a:IsA("Model") and a:FindFirstChildOfClass("Humanoid") then
-                local b = a:FindFirstChild("Fake")
-                if b then
-                    print("Highlighting model: " .. a.Name)
-                    n(b)
-                else
-                    print("No Fake model found in: " .. a.Name)
-                end
-            else
-                print("No Humanoid found in: " .. a.Name)
-            end
-        end
-    else
-        warn("Titans folder not found in Workspace.")
-    end
-end
-local function n(a)
-    l = a
-    for a, a in ipairs(h) do
-        if a:IsA("Highlight") then
-            a.Enabled = l
-        end
-    end
-    k.BackgroundColor3 = l and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
-    if not l then
-        for a, a in ipairs(h) do
-            a:Destroy()
-        end
-        h = {}
-    else
-        m()
-    end
-end
-k.MouseButton1Click:Connect(function()
-    n(not l)
-end)
-m()
-local function h()
-    local a = a.Character or a.CharacterAdded:Wait()
-    local a = a:WaitForChild("HumanoidRootPart")
-    if a and a:IsA("BasePart") then
-        local a = a.Position
-        print("HumanoidRootPart Location:", a)
-        return a
-    else
-        warn("HumanoidRootPart not found for LocalPlayer.")
-        return nil
-    end
-end
-local function k()
-    local a = c:FindFirstChild("Titans")
-    local b = nil
-    local c = math.huge
-    if a then
-        local d = h()
-        for a, a in ipairs(a:GetChildren()) do
-            if a:IsA("Model") and a:FindFirstChildOfClass("Humanoid") then
-                local a = a:FindFirstChild("Hitboxes")
-                if a then
-                    local a = a:FindFirstChild("Hit")
-                    if a then
-                        local a = a:FindFirstChild("Nape")
-                        if a then
-                            local d = (a.Position - d).Magnitude
-                            if d < c and d <= j then
-                                c = d
-                                b = a.CFrame
-                            end
-                        end
-                    end
+
+-- دالة لتطبيق ESP على العمالقة
+local function applyESP()
+    local titansFolder = workspace:FindFirstChild("Titans")
+    if titansFolder then
+        for _, titan in ipairs(titansFolder:GetChildren()) do
+            if titan:IsA("Model") and titan:FindFirstChildOfClass("Humanoid") then
+                local fake = titan:FindFirstChild("Fake")
+                if fake then
+                    createHighlight(fake, Color3.new(1, 1, 1), 0.65)
                 end
             end
         end
-    else
-        warn("Titans folder not found in Workspace.")
     end
-    if b then
-        e = b
-        print("Closest NapeLocation2 set to:", e)
-    else
-        warn("No Nape part found within maximum teleport distance.")
+end
+
+-- تفعيل/تعطيل ESP
+local function toggleESP(enable)
+    ESPEnabled = enable
+    for _, highlight in ipairs(Highlights) do
+        highlight.Enabled = ESPEnabled
     end
-    return e
-end
-local function c()
-    f = not f
-    local a = f and "Teleport Enabled (Bypass status is unknown)" or "Teleport Disabled (Bypass status is unknown)"
-    print("Nape Teleportation Toggled: " .. a)
-    return a
-end
-local function h()
-    if f then
-        k()
-        local a = a.Character and a.Character:FindFirstChild("HumanoidRootPart")
-        if a and e then
-            local b = a.CFrame
-            a.CFrame = e
-            delay(0.01, function()
-                a.Velocity = Vector3.new(300, 10, 0)
-            end)
-            delay(0.35, function()
-                a.CFrame = b
-                e = nil
-                print("NapeLocation reset to nil")
-            end)
+    tpButtonE.BackgroundColor3 = ESPEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
+    if not ESPEnabled then
+        for _, highlight in ipairs(Highlights) do
+            highlight:Destroy()
         end
-    end
-end
-d.InputEnded:Connect(function(a)
-    if a.UserInputType == Enum.UserInputType.MouseButton1 and f == true then
-        h()
-    end
-end)
-g.MouseButton1Click:Connect(function()
-    local a = c()
-    g.BackgroundColor3 = f and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
-end)
-local c = game.Workspace.Unclimbable.Reloads.GasTanks:FindFirstChild("GasTank"):FindFirstChild("GasTank")
-local function e()
-    local a = a.Character and a.Character:FindFirstChild("HumanoidRootPart")
-    if c and a then
-        local b = c.CFrame
-        a.CFrame = c.CFrame + Vector3.new(0, 25, 0)
-    end
-end
-i.MouseButton1Click:Connect(e)
-local function a()
-    if b.Visible then
-        b.Visible = false
-        wait(0.35)
+        Highlights = {}
     else
-        b.Visible = true
-        wait(0.35)
+        applyESP()
+    end
+    saveSettings()
+end
+
+-- النقل إلى Refill
+local gasTank = workspace.Unclimbable.Reloads.GasTanks:FindFirstChild("GasTank"):FindFirstChild("GasTank")
+local function teleportToRefill()
+    local rootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if gasTank and rootPart then
+        rootPart.CFrame = gasTank.CFrame + Vector3.new(0, 25, 0)
     end
 end
-d.InputBegan:Connect(function(b)
-    if b.KeyCode == Enum.KeyCode.RightShift then
-        a()
+
+-- تفعيل/تعطيل النقل الآني
+local function toggleTeleport()
+    TeleportEnabled = not TeleportEnabled
+    tpButton.BackgroundColor3 = TeleportEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
+    saveSettings()
+end
+
+-- دالة لحفظ الإعدادات
+local function saveSettings()
+    local settings = {
+        TeleportEnabled = TeleportEnabled,
+        TitanFarmerEnabled = TitanFarmerEnabled,
+        ESPEnabled = ESPEnabled
+    }
+    pcall(function()
+        SettingsStore:SetAsync(LocalPlayer.UserId .. "_Settings", settings)
+    end)
+end
+
+-- دالة لتحميل الإعدادات
+local function loadSettings()
+    local success, settings = pcall(function()
+        return SettingsStore:GetAsync(LocalPlayer.UserId .. "_Settings")
+    end)
+    if success and settings then
+        TeleportEnabled = settings.TeleportEnabled or false
+        TitanFarmerEnabled = settings.TitanFarmerEnabled or false
+        ESPEnabled = settings.ESPEnabled or false
+        
+        tpButton.BackgroundColor3 = TeleportEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
+        tpButtonF.BackgroundColor3 = TitanFarmerEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
+        tpButtonE.BackgroundColor3 = ESPEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
+        
+        if TitanFarmerEnabled then toggleTitanFarmer() end
+        if ESPEnabled then toggleESP(true) end
+    end
+end
+
+-- دالة لإخفاء/إظهار الواجهة
+local function toggleFrameVisibility()
+    if Frame.Visible then
+        Frame.Visible = false
+        maximizeButton.Visible = true
+    else
+        Frame.Visible = true
+        maximizeButton.Visible = false
+    end
+end
+
+-- دالة لإزالة السكريبت
+local function removeScript()
+    ScreenGui:Destroy()
+end
+
+-- تشغيل توسيع Nape عند البدء
+local function initialize()
+    print("Nape Expander Loaded")
+    local titansBasePart = workspace:FindFirstChild("Titans")
+    if titansBasePart then
+        processTitans(titansBasePart)
+    end
+    workspace.ChildAdded:Connect(function(child)
+        if child.Name == "Titans" then
+            processTitans(child)
+        end
+    end)
+    loadSettings() -- تحميل الإعدادات عند البدء
+end
+
+-- ربط الأحداث
+tpButtonF.MouseButton1Click:Connect(toggleTitanFarmer)
+tpButton.MouseButton1Click:Connect(toggleTeleport)
+tpButtonE.MouseButton1Click:Connect(function() toggleESP(not ESPEnabled) end)
+refillButton.MouseButton1Click:Connect(teleportToRefill)
+closeButton.MouseButton1Click:Connect(removeScript)
+minimizeButton.MouseButton1Click:Connect(toggleFrameVisibility)
+maximizeButton.MouseButton1Click:Connect(toggleFrameVisibility)
+
+-- النقل الآني الدائم عند الضغط على زر الماوس الأيسر
+UserInputService.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 and TeleportEnabled then
+        simpleTeleport()
+    elseif input.KeyCode == Enum.KeyCode.RightShift then
+        toggleFrameVisibility()
     end
 end)
+
+-- البدء
+initialize()
+applyESP()
