@@ -61,6 +61,7 @@ local minimizeButton = Instance.new("TextButton") -- زر -
 local maximizeButton = Instance.new("TextButton") -- زر +
 
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ResetOnSpawn = false
 print("[DEBUG] ScreenGui created and parented to PlayerGui")
 
 Frame.Parent = ScreenGui
@@ -69,7 +70,8 @@ Frame.Position = UDim2.new(0.4, 0, 0.05, 0)
 Frame.Size = UDim2.new(0, 250, 0, 200)
 Frame.Draggable = true
 Frame.Active = true
-print("[DEBUG] Frame created")
+Frame.Visible = true
+print("[DEBUG] Frame created and visible")
 
 Title.Parent = Frame
 Title.BackgroundTransparency = 1
@@ -87,7 +89,7 @@ tpButton.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
 tpButton.Position = UDim2.new(0.1, 0, 0.2, 0)
 tpButton.Size = UDim2.new(0.8, 0, 0, 30)
 tpButton.Font = Enum.Font.SourceSans
-tpButton.Text = "Nape Teleport"
+tpButton.Text = "Nape Teleport (Auto Kill)"
 tpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 tpButton.TextSize = 14
 print("[DEBUG] Nape Teleport button created")
@@ -161,7 +163,7 @@ local ESPEnabled = false
 local MaxTeleportDistance = 1250
 local Highlights = {}
 
--- دالة للعثور على أقرب Nape
+-- دالة للعثور على أقرب Nape حي فقط
 local function findClosestNape()
     local titansFolder = Workspace:FindFirstChild("Titans")
     if not titansFolder then
@@ -176,16 +178,19 @@ local function findClosestNape()
         return nil
     end
     for _, titan in pairs(titansFolder:GetChildren()) do
-        local hitboxes = titan:FindFirstChild("Hitboxes")
-        if hitboxes then
-            local hit = hitboxes:FindFirstChild("Hit")
-            if hit then
-                local nape = hit:FindFirstChild("Nape")
-                if nape then
-                    local distance = (nape.Position - playerPos).Magnitude
-                    if distance < minDistance and distance <= MaxTeleportDistance then
-                        minDistance = distance
-                        closestNape = nape
+        local humanoid = titan:FindFirstChildOfClass("Humanoid")
+        if humanoid and humanoid.Health > 0 then
+            local hitboxes = titan:FindFirstChild("Hitboxes")
+            if hitboxes then
+                local hit = hitboxes:FindFirstChild("Hit")
+                if hit then
+                    local nape = hit:FindFirstChild("Nape")
+                    if nape then
+                        local distance = (nape.Position - playerPos).Magnitude
+                        if distance < minDistance and distance <= MaxTeleportDistance then
+                            minDistance = distance
+                            closestNape = nape
+                        end
                     end
                 end
             end
@@ -193,21 +198,43 @@ local function findClosestNape()
     end
     NapeLocation = closestNape
     if NapeLocation then
-        print("[DEBUG] Closest Nape found at " .. tostring(NapeLocation.Position))
+        print("[DEBUG] Closest living Nape found at " .. tostring(NapeLocation.Position))
     else
-        print("[DEBUG] No Nape found")
+        print("[DEBUG] No living Nape found")
     end
     return NapeLocation
 end
 
--- دالة للنقل الآني البسيط
-local function simpleTeleport()
+-- دالة لمحاكاة الهجوم
+local function attackTitan()
+    local character = LocalPlayer.Character
+    if character then
+        local tool = character:FindFirstChildOfClass("Tool")
+        if tool then
+            -- محاكاة تفعيل الأداة للهجوم
+            tool:Activate()
+            print("[DEBUG] Tool activated for attack")
+        else
+            -- إذا لم يكن هناك أداة، محاكاة نقرة هجوم
+            local humanoid = character:FindFirstChild("Humanoid")
+            if humanoid then
+                humanoid:ChangeState(Enum.HumanoidStateType.Jumping) -- لمحاكاة حركة هجوم
+                print("[DEBUG] Simulated attack via jump")
+            end
+        end
+    end
+end
+
+-- دالة للنقل الآني مع الهجوم التلقائي
+local function teleportAndKill()
     findClosestNape()
     if NapeLocation then
         local rootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if rootPart then
             rootPart.CFrame = CFrame.new(NapeLocation.Position + Vector3.new(0, 10, 0))
             print("[DEBUG] Teleported to Nape")
+            wait(0.1) -- تأخير بسيط لضمان استقرار الموقع
+            attackTitan()
         else
             print("[DEBUG] HumanoidRootPart not found for teleport")
         end
@@ -252,10 +279,16 @@ local function toggleTitanFarmer()
         local bodyPos, bodyGyro = teleportToNape()
         spawn(function()
             while TitanFarmerEnabled and wait(1) do
-                findClosestNape()
-                if NapeLocation and bodyPos and bodyGyro then
+                local currentTitan = NapeLocation and NapeLocation.Parent and NapeLocation.Parent.Parent and NapeLocation.Parent.Parent.Parent
+                if currentTitan and currentTitan:FindFirstChildOfClass("Humanoid") and currentTitan:FindFirstChildOfClass("Humanoid").Health <= 0 then
+                    removeBodyObjects(bodyPos, bodyGyro)
+                    bodyPos, bodyGyro = teleportToNape()
+                    wait(0.1)
+                    attackTitan()
+                elseif NapeLocation and bodyPos and bodyGyro then
                     bodyPos.Position = NapeLocation.Position + Vector3.new(0, 300, 0)
                     bodyGyro.CFrame = LocalPlayer.Character and LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart.CFrame
+                    attackTitan()
                 end
             end
             removeBodyObjects(bodyPos, bodyGyro)
@@ -329,11 +362,20 @@ local function teleportToRefill()
     end
 end
 
--- تفعيل/تعطيل النقل الآني
+-- تفعيل/تعطيل النقل الآني مع الهجوم التلقائي
 local function toggleTeleport()
     TeleportEnabled = not TeleportEnabled
     tpButton.BackgroundColor3 = TeleportEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
-    print("[DEBUG] Nape Teleport Enabled: " .. tostring(TeleportEnabled))
+    if TeleportEnabled then
+        spawn(function()
+            while TeleportEnabled and wait(1) do
+                teleportAndKill()
+            end
+        end)
+        print("[DEBUG] Nape Teleport with Auto Kill enabled")
+    else
+        print("[DEBUG] Nape Teleport with Auto Kill disabled")
+    end
 end
 
 -- دالة لإخفاء/إظهار الواجهة
@@ -380,14 +422,6 @@ tpButtonE.MouseButton1Click:Connect(toggleESP)
 closeButton.MouseButton1Click:Connect(removeScript)
 minimizeButton.MouseButton1Click:Connect(toggleFrameVisibility)
 maximizeButton.MouseButton1Click:Connect(toggleFrameVisibility)
-
--- النقل الآني عند النقر بزر الماوس الأيسر
-local mouse = LocalPlayer:GetMouse()
-mouse.Button1Down:Connect(function()
-    if TeleportEnabled then
-        simpleTeleport()
-    end
-end)
 
 -- البدء
 initialize()
