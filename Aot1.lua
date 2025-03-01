@@ -19,8 +19,8 @@ local function expandNapeHitbox(hitFolder)
     local napeObject = findNape(hitFolder)
     if napeObject then
         napeObject.Size = Vector3.new(105, 120, 100)
-        napeObject.Transparency = 0.96
-        napeObject.Color = Color3.new(1, 1, 1)
+        napeObject.Transparency = 0.5 -- جعلها مرئية (Nape Visible Titan Ripper)
+        napeObject.Color = Color3.fromRGB(255, 0, 0) -- لون أحمر مميز
         napeObject.Material = Enum.Material.Neon
         napeObject.CanCollide = false
         napeObject.Anchored = false
@@ -28,7 +28,22 @@ local function expandNapeHitbox(hitFolder)
     end
 end
 
--- دالة لمعالجة العمالقة
+-- دالة لتوسيع النقطة الضعيفة لإيرين (Extend Eren Weakpoint)
+local function extendErenWeakpoint()
+    local eren = Workspace:FindFirstChild("Eren") -- افتراض أن اسم العملاق هو "Eren"
+    if eren then
+        local hitboxes = eren:FindFirstChild("Hitboxes")
+        if hitboxes then
+            local hit = hitboxes:FindFirstChild("Hit")
+            if hit then
+                expandNapeHitbox(hit)
+                print("[DEBUG] Eren weakpoint extended")
+            end
+        end
+    end
+end
+
+-- دالة لمعالجة العمالقة (Nape Extend)
 local function processTitans(titansBasePart)
     if not titansBasePart then
         print("[DEBUG] Titans folder not found")
@@ -55,7 +70,10 @@ local Frame = Instance.new("Frame")
 local Title = Instance.new("TextLabel")
 local tpButton = Instance.new("TextButton")
 local tpButtonF = Instance.new("TextButton")
-local refillButton = Instance.new("TextButton")
+local opAutoFarmButton = Instance.new("TextButton")
+local wipAutoFarmButton = Instance.new("TextButton")
+local autoRefillButton = Instance.new("TextButton")
+local antiInjuryButton = Instance.new("TextButton")
 local tpButtonE = Instance.new("TextButton")
 local closeButton = Instance.new("TextButton")
 local minimizeButton = Instance.new("TextButton")
@@ -68,7 +86,7 @@ print("[DEBUG] ScreenGui created and parented to PlayerGui")
 Frame.Parent = ScreenGui
 Frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 Frame.Position = UDim2.new(0.4, 0, 0.05, 0)
-Frame.Size = UDim2.new(0, 250, 0, 200)
+Frame.Size = UDim2.new(0, 250, 0, 350)
 Frame.Draggable = true
 Frame.Active = true
 Frame.Visible = true
@@ -87,7 +105,7 @@ print("[DEBUG] Title created")
 
 tpButton.Parent = Frame
 tpButton.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
-tpButton.Position = UDim2.new(0.1, 0, 0.2, 0)
+tpButton.Position = UDim2.new(0.1, 0, 0.1, 0)
 tpButton.Size = UDim2.new(0.8, 0, 0, 30)
 tpButton.Font = Enum.Font.SourceSans
 tpButton.Text = "Nape Teleport (Auto Kill)"
@@ -97,7 +115,7 @@ print("[DEBUG] Nape Teleport button created")
 
 tpButtonF.Parent = Frame
 tpButtonF.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
-tpButtonF.Position = UDim2.new(0.1, 0, 0.35, 0)
+tpButtonF.Position = UDim2.new(0.1, 0, 0.2, 0)
 tpButtonF.Size = UDim2.new(0.8, 0, 0, 30)
 tpButtonF.Font = Enum.Font.SourceSans
 tpButtonF.Text = "Titan Farmer"
@@ -105,19 +123,49 @@ tpButtonF.TextColor3 = Color3.fromRGB(255, 255, 255)
 tpButtonF.TextSize = 14
 print("[DEBUG] Titan Farmer button created")
 
-refillButton.Parent = Frame
-refillButton.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
-refillButton.Position = UDim2.new(0.1, 0, 0.5, 0)
-refillButton.Size = UDim2.new(0.8, 0, 0, 30)
-refillButton.Font = Enum.Font.SourceSans
-refillButton.Text = "Tp to Refill"
-refillButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-refillButton.TextSize = 14
-print("[DEBUG] Refill button created")
+opAutoFarmButton.Parent = Frame
+opAutoFarmButton.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
+opAutoFarmButton.Position = UDim2.new(0.1, 0, 0.3, 0)
+opAutoFarmButton.Size = UDim2.new(0.8, 0, 0, 30)
+opAutoFarmButton.Font = Enum.Font.SourceSans
+opAutoFarmButton.Text = "OP Auto Farm"
+opAutoFarmButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+opAutoFarmButton.TextSize = 14
+print("[DEBUG] OP Auto Farm button created")
+
+wipAutoFarmButton.Parent = Frame
+wipAutoFarmButton.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
+wipAutoFarmButton.Position = UDim2.new(0.1, 0, 0.4, 0)
+wipAutoFarmButton.Size = UDim2.new(0.8, 0, 0, 30)
+wipAutoFarmButton.Font = Enum.Font.SourceSans
+wipAutoFarmButton.Text = "WIP Auto Farm"
+wipAutoFarmButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+wipAutoFarmButton.TextSize = 14
+print("[DEBUG] WIP Auto Farm button created")
+
+autoRefillButton.Parent = Frame
+autoRefillButton.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
+autoRefillButton.Position = UDim2.new(0.1, 0, 0.5, 0)
+autoRefillButton.Size = UDim2.new(0.8, 0, 0, 30)
+autoRefillButton.Font = Enum.Font.SourceSans
+autoRefillButton.Text = "Auto Grab Blade Refill"
+autoRefillButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+autoRefillButton.TextSize = 14
+print("[DEBUG] Auto Refill button created")
+
+antiInjuryButton.Parent = Frame
+antiInjuryButton.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
+antiInjuryButton.Position = UDim2.new(0.1, 0, 0.6, 0)
+antiInjuryButton.Size = UDim2.new(0.8, 0, 0, 30)
+antiInjuryButton.Font = Enum.Font.SourceSans
+antiInjuryButton.Text = "Anti-Injury"
+antiInjuryButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+antiInjuryButton.TextSize = 14
+print("[DEBUG] Anti-Injury button created")
 
 tpButtonE.Parent = Frame
 tpButtonE.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
-tpButtonE.Position = UDim2.new(0.1, 0, 0.65, 0)
+tpButtonE.Position = UDim2.new(0.1, 0, 0.7, 0)
 tpButtonE.Size = UDim2.new(0.8, 0, 0, 30)
 tpButtonE.Font = Enum.Font.SourceSans
 tpButtonE.Text = "Titan ESP"
@@ -160,13 +208,17 @@ print("[DEBUG] Maximize button created")
 local NapeLocation
 local TeleportEnabled = false
 local TitanFarmerEnabled = false
+local OPAutoFarmEnabled = false
+local WIPAutoFarmEnabled = false
+local AutoRefillEnabled = false
+local AntiInjuryEnabled = false
 local ESPEnabled = false
-local MaxTeleportDistance = 200 -- تقليل المسافة القصوى للبحث عن Nape
-local SafePosition = Vector3.new(0, 50, 0) -- موقع آمن لإعادة اللاعب (يمكن تعديله)
+local MaxTeleportDistance = 150 -- تقليل المسافة لتجنب النقل إلى آخر الخريطة
+local SafePosition = Vector3.new(0, 50, 0) -- موقع آمن (يمكن تعديله)
 
 local Highlights = {}
 
--- دالة للتحقق من وجود الشخصية وجاهزيتها
+-- دالة للتحقق من جاهزية اللاعب
 local function isPlayerReady()
     local character = LocalPlayer.Character
     if not character then
@@ -233,7 +285,7 @@ local function findClosestNape()
     return NapeLocation
 end
 
--- دالة لمحاكاة الهجوم في Attack on Titan: Revolution
+-- دالة لمحاكاة الهجوم (مع Nape Multi - مضاعفة الضرر)
 local function attackTitan()
     local character = LocalPlayer.Character
     if not character then
@@ -263,6 +315,14 @@ local function attackTitan()
             rootPart.Velocity = (NapeLocation.Position - rootPart.Position).Unit * 50
             wait(0.3)
             humanoid.WalkSpeed = 16
+            -- مضاعفة الضرر (Nape Multi)
+            if NapeLocation.Parent then
+                local titanHumanoid = NapeLocation.Parent.Parent.Parent:FindFirstChildOfClass("Humanoid")
+                if titanHumanoid then
+                    titanHumanoid:TakeDamage(titanHumanoid.MaxHealth * 0.5) -- 50% ضرر إضافي
+                    print("[DEBUG] Nape Multi applied")
+                end
+            end
         else
             print("[DEBUG] No ODM Gear found, attempting movement attack")
             humanoid.WalkSpeed = 100
@@ -316,7 +376,7 @@ local function teleportAndKill()
     end
 end
 
--- دالة للنقل الآني مع BodyPosition (Titan Farmer)
+-- دالة للنقل الآني مع BodyPosition (Titan Farmer و OP Auto Farm)
 local function teleportToNape()
     local success, err = pcall(function()
         if isPlayerReady() then
@@ -407,6 +467,108 @@ local function toggleTitanFarmer()
     end
 end
 
+-- تفعيل/تعطيل OP Auto Farm
+local function toggleOPAutoFarm()
+    OPAutoFarmEnabled = not OPAutoFarmEnabled
+    opAutoFarmButton.BackgroundColor3 = OPAutoFarmEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
+    if OPAutoFarmEnabled then
+        local bodyPos, bodyGyro = teleportToNape()
+        spawn(function()
+            while OPAutoFarmEnabled do
+                local success, err = pcall(function()
+                    if isPlayerReady() then
+                        local currentTitan = NapeLocation and NapeLocation.Parent and NapeLocation.Parent.Parent and NapeLocation.Parent.Parent.Parent
+                        if not currentTitan or not currentTitan:FindFirstChildOfClass("Humanoid") or currentTitan:FindFirstChildOfClass("Humanoid").Health <= 0 then
+                            removeBodyObjects(bodyPos, bodyGyro)
+                            wait(0.1)
+                            findClosestNape()
+                            if NapeLocation then
+                                bodyPos, bodyGyro = teleportToNape()
+                                if NapeLocation then
+                                    wait(0.2)
+                                    attackTitan()
+                                end
+                            else
+                                print("[DEBUG] No Nape found, resetting player position")
+                                resetPlayerPosition()
+                            end
+                        elseif NapeLocation and bodyPos and bodyGyro then
+                            bodyPos.Position = NapeLocation.Position + Vector3.new(0, 5, 0)
+                            bodyGyro.CFrame = CFrame.lookAt(bodyPos.Position, NapeLocation.Position)
+                            attackTitan()
+                        else
+                            print("[DEBUG] No Nape found, waiting for new titan")
+                        end
+                    else
+                        print("[DEBUG] Player not ready, pausing OP Auto Farm")
+                    end
+                end)
+                if not success then
+                    print("[DEBUG] Error in OP Auto Farm loop: " .. err)
+                    removeBodyObjects(bodyPos, bodyGyro)
+                    bodyPos, bodyGyro = teleportToNape()
+                end
+                wait(0.5) -- سرعة أكبر لـ OP Auto Farm
+            end
+            removeBodyObjects(bodyPos, bodyGyro)
+        end)
+        print("[DEBUG] OP Auto Farm enabled")
+    else
+        print("[DEBUG] OP Auto Farm disabled")
+    end
+end
+
+-- تفعيل/تعطيل WIP Auto Farm
+local function toggleWIPAutoFarm()
+    WIPAutoFarmEnabled = not WIPAutoFarmEnabled
+    wipAutoFarmButton.BackgroundColor3 = WIPAutoFarmEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
+    if WIPAutoFarmEnabled then
+        local bodyPos, bodyGyro = teleportToNape()
+        spawn(function()
+            while WIPAutoFarmEnabled do
+                local success, err = pcall(function()
+                    if isPlayerReady() then
+                        local currentTitan = NapeLocation and NapeLocation.Parent and NapeLocation.Parent.Parent and NapeLocation.Parent.Parent.Parent
+                        if not currentTitan or not currentTitan:FindFirstChildOfClass("Humanoid") or currentTitan:FindFirstChildOfClass("Humanoid").Health <= 0 then
+                            removeBodyObjects(bodyPos, bodyGyro)
+                            wait(0.1)
+                            findClosestNape()
+                            if NapeLocation then
+                                bodyPos, bodyGyro = teleportToNape()
+                                if NapeLocation then
+                                    wait(0.2)
+                                    attackTitan()
+                                end
+                            else
+                                print("[DEBUG] No Nape found, resetting player position")
+                                resetPlayerPosition()
+                            end
+                        elseif NapeLocation and bodyPos and bodyGyro then
+                            bodyPos.Position = NapeLocation.Position + Vector3.new(0, 5, 0)
+                            bodyGyro.CFrame = CFrame.lookAt(bodyPos.Position, NapeLocation.Position)
+                            attackTitan()
+                        else
+                            print("[DEBUG] No Nape found, waiting for new titan")
+                        end
+                    else
+                        print("[DEBUG] Player not ready, pausing WIP Auto Farm")
+                    end
+                end)
+                if not success then
+                    print("[DEBUG] Error in WIP Auto Farm loop: " .. err)
+                    removeBodyObjects(bodyPos, bodyGyro)
+                    bodyPos, bodyGyro = teleportToNape()
+                end
+                wait(1)
+            end
+            removeBodyObjects(bodyPos, bodyGyro)
+        end)
+        print("[DEBUG] WIP Auto Farm enabled")
+    else
+        print("[DEBUG] WIP Auto Farm disabled")
+    end
+end
+
 -- دالة لإنشاء Highlight لـ ESP
 local function createHighlight(model)
     if not model:FindFirstChildOfClass("Highlight") then
@@ -454,7 +616,7 @@ local function toggleESP()
     end
 end
 
--- النقل إلى Refill
+-- النقل إلى Refill (Auto Grab Blade Refill)
 local function teleportToRefill()
     local gasTank = Workspace:FindFirstChild("Unclimbable") and Workspace.Unclimbable:FindFirstChild("Reloads") and Workspace.Unclimbable.Reloads:FindFirstChild("GasTanks") and Workspace.Unclimbable.Reloads.GasTanks:FindFirstChild("GasTank") and Workspace.Unclimbable.Reloads.GasTanks.GasTank:FindFirstChild("GasTank")
     if gasTank then
@@ -467,6 +629,69 @@ local function teleportToRefill()
         end
     else
         print("[DEBUG] GasTank not found in Workspace")
+    end
+end
+
+-- تفعيل/تعطيل Auto Grab Blade Refill
+local function toggleAutoRefill()
+    AutoRefillEnabled = not AutoRefillEnabled
+    autoRefillButton.BackgroundColor3 = AutoRefillEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
+    if AutoRefillEnabled then
+        spawn(function()
+            while AutoRefillEnabled do
+                local character = LocalPlayer.Character
+                if character then
+                    local tool = character:FindFirstChildOfClass("Tool")
+                    if tool then
+                        -- افتراض أن هناك خاصية للتحقق من مستوى الشفرات
+                        -- يمكن تعديل هذا بناءً على اللعبة
+                        teleportToRefill()
+                        wait(5) -- الانتظار قبل إعادة التعبئة
+                    end
+                end
+                wait(10)
+            end
+        end)
+        print("[DEBUG] Auto Refill enabled")
+    else
+        print("[DEBUG] Auto Refill disabled")
+    end
+end
+
+-- تفعيل/تعطيل Anti-Injury
+local function toggleAntiInjury()
+    AntiInjuryEnabled = not AntiInjuryEnabled
+    antiInjuryButton.BackgroundColor3 = AntiInjuryEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
+    if AntiInjuryEnabled then
+        spawn(function()
+            while AntiInjuryEnabled do
+                local character = LocalPlayer.Character
+                if character then
+                    local humanoid = character:FindFirstChild("Humanoid")
+                    if humanoid then
+                        humanoid.WalkSpeed = 100 -- زيادة السرعة لتجنب الإصابات
+                        humanoid.JumpPower = 50
+                        humanoid.MaxHealth = math.huge
+                        humanoid.Health = math.huge
+                        print("[DEBUG] Anti-Injury applied")
+                    end
+                end
+                wait(1)
+            end
+        end)
+        print("[DEBUG] Anti-Injury enabled")
+    else
+        local character = LocalPlayer.Character
+        if character then
+            local humanoid = character:FindFirstChild("Humanoid")
+            if humanoid then
+                humanoid.WalkSpeed = 16 -- إعادة السرعة الطبيعية
+                humanoid.JumpPower = 50
+                humanoid.MaxHealth = 100
+                humanoid.Health = 100
+            end
+        end
+        print("[DEBUG] Anti-Injury disabled")
     end
 end
 
@@ -530,12 +755,17 @@ local function initialize()
             print("[DEBUG] Titans folder added, processing")
         end
     end)
+    -- توسيع النقطة الضعيفة لإيرين
+    extendErenWeakpoint()
 end
 
 -- ربط الأحداث
 tpButton.MouseButton1Click:Connect(toggleTeleport)
 tpButtonF.MouseButton1Click:Connect(toggleTitanFarmer)
-refillButton.MouseButton1Click:Connect(teleportToRefill)
+opAutoFarmButton.MouseButton1Click:Connect(toggleOPAutoFarm)
+wipAutoFarmButton.MouseButton1Click:Connect(toggleWIPAutoFarm)
+autoRefillButton.MouseButton1Click:Connect(toggleAutoRefill)
+antiInjuryButton.MouseButton1Click:Connect(toggleAntiInjury)
 tpButtonE.MouseButton1Click:Connect(toggleESP)
 closeButton.MouseButton1Click:Connect(removeScript)
 minimizeButton.MouseButton1Click:Connect(toggleFrameVisibility)
