@@ -1,6 +1,7 @@
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- دالة للعثور على Nape
 local function findNape(hitFolder)
@@ -52,13 +53,13 @@ end
 local ScreenGui = Instance.new("ScreenGui")
 local Frame = Instance.new("Frame")
 local Title = Instance.new("TextLabel")
-local tpButton = Instance.new("TextButton") -- Nape Teleport
-local tpButtonF = Instance.new("TextButton") -- Titan Farmer
-local refillButton = Instance.new("TextButton") -- Tp to Refill
-local tpButtonE = Instance.new("TextButton") -- Titan ESP
-local closeButton = Instance.new("TextButton") -- زر X
-local minimizeButton = Instance.new("TextButton") -- زر -
-local maximizeButton = Instance.new("TextButton") -- زر +
+local tpButton = Instance.new("TextButton")
+local tpButtonF = Instance.new("TextButton")
+local refillButton = Instance.new("TextButton")
+local tpButtonE = Instance.new("TextButton")
+local closeButton = Instance.new("TextButton")
+local minimizeButton = Instance.new("TextButton")
+local maximizeButton = Instance.new("TextButton")
 
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 ScreenGui.ResetOnSpawn = false
@@ -205,7 +206,7 @@ local function findClosestNape()
     return NapeLocation
 end
 
--- دالة لمحاكاة الهجوم
+-- دالة لمحاكاة الهجوم في Attack on Titan: Revolution
 local function attackTitan()
     local character = LocalPlayer.Character
     if not character then
@@ -219,27 +220,28 @@ local function attackTitan()
         return
     end
 
-    -- التحقق من وجود أداة وتفعيلها
+    -- التحقق من وجود أداة ODM Gear وتفعيل الهجوم
     local tool = character:FindFirstChildOfClass("Tool")
     if tool then
-        tool:Activate()
-        print("[DEBUG] Tool activated for attack")
-        wait(0.5) -- تأخير للسماح للهجوم بالتسجيل
+        tool:Activate() -- تفعيل الأداة (ODM Gear)
+        print("[DEBUG] ODM Gear activated for attack")
+        -- محاكاة النقر بزر الماوس الأيسر لضرب Nape
+        for i = 1, 3 do -- عدد ضربات متتالية لضمان القتل
+            mouse1click() -- محاكاة نقرة M1 (قد يعمل في Solara)
+            wait(0.1) -- تأخير بين النقرات
+        end
     else
-        -- إذا لم يكن هناك أداة، محاكاة هجوم مباشر
+        print("[DEBUG] No ODM Gear found, attempting direct damage")
+        -- إذا لم يكن هناك أداة، محاولة إتلاف العملاق مباشرة
         if NapeLocation then
             local titan = NapeLocation.Parent and NapeLocation.Parent.Parent and NapeLocation.Parent.Parent.Parent
             if titan then
                 local titanHumanoid = titan:FindFirstChildOfClass("Humanoid")
                 if titanHumanoid then
-                    titanHumanoid:TakeDamage(50) -- محاولة إتلاف العملاق مباشرة
-                    print("[DEBUG] Attempted direct damage to titan (50)")
+                    titanHumanoid:TakeDamage(100) -- محاولة إتلاف العملاق بضرر كبير
+                    print("[DEBUG] Attempted direct damage to titan (100)")
                 end
             end
-            -- محاكاة حركة هجوم
-            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-            wait(0.5) -- تأخير لإتمام الهجوم
-            print("[DEBUG] Simulated attack via jump")
         end
     end
 end
@@ -250,12 +252,12 @@ local function teleportAndKill()
     if NapeLocation then
         local rootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if rootPart then
-            -- النقل إلى موقع قريب من Nape لضمان الهجوم
-            rootPart.CFrame = CFrame.new(NapeLocation.Position + Vector3.new(0, 5, 0)) -- ارتفاع أقل للبقاء قريبًا
+            -- النقل إلى موقع قريب جدًا من Nape مع توجيه صحيح
+            rootPart.CFrame = CFrame.new(NapeLocation.Position + Vector3.new(0, 2, 0)) * CFrame.lookAt(rootPart.Position, NapeLocation.Position)
             print("[DEBUG] Teleported to Nape")
             wait(0.2) -- تأخير لضمان الاستقرار
             attackTitan()
-            wait(0.5) -- تأخير إضافي للسماح للهجوم بالتسجيل قبل النقل التالي
+            wait(1) -- تأخير للسماح بتسجيل الهجوم قبل النقل التالي
         else
             print("[DEBUG] HumanoidRootPart not found for teleport")
         end
@@ -270,11 +272,11 @@ local function teleportToNape()
         if rootPart then
             local bodyPos = Instance.new("BodyPosition")
             bodyPos.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            bodyPos.Position = NapeLocation.Position + Vector3.new(0, 10, 0) -- ارتفاع أقل للهجوم
+            bodyPos.Position = NapeLocation.Position + Vector3.new(0, 5, 0)
             bodyPos.Parent = rootPart
             local bodyGyro = Instance.new("BodyGyro")
             bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-            bodyGyro.CFrame = rootPart.CFrame
+            bodyGyro.CFrame = CFrame.lookAt(rootPart.Position, NapeLocation.Position)
             bodyGyro.Parent = rootPart
             print("[DEBUG] BodyPosition and BodyGyro applied for Titan Farmer")
             return bodyPos, bodyGyro
@@ -307,8 +309,8 @@ local function toggleTitanFarmer()
                     wait(0.2)
                     attackTitan()
                 elseif NapeLocation and bodyPos and bodyGyro then
-                    bodyPos.Position = NapeLocation.Position + Vector3.new(0, 10, 0) -- ارتفاع أقل للهجوم
-                    bodyGyro.CFrame = LocalPlayer.Character and LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart.CFrame
+                    bodyPos.Position = NapeLocation.Position + Vector3.new(0, 5, 0)
+                    bodyGyro.CFrame = CFrame.lookAt(bodyPos.Position, NapeLocation.Position)
                     attackTitan()
                 end
             end
@@ -389,7 +391,7 @@ local function toggleTeleport()
     tpButton.BackgroundColor3 = TeleportEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
     if TeleportEnabled then
         spawn(function()
-            while TeleportEnabled and wait(1.5) do -- زيادة التأخير لإعطاء وقت للهجوم
+            while TeleportEnabled and wait(1.5) do
                 teleportAndKill()
             end
         end)
