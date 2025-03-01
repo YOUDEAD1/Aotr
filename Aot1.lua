@@ -1,4 +1,3 @@
-
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -53,7 +52,10 @@ end
 local ScreenGui = Instance.new("ScreenGui")
 local Frame = Instance.new("Frame")
 local Title = Instance.new("TextLabel")
-local tpButton = Instance.new("TextButton")
+local tpButton = Instance.new("TextButton") -- Nape Teleport
+local tpButtonF = Instance.new("TextButton") -- Titan Farmer
+local refillButton = Instance.new("TextButton") -- Tp to Refill
+local tpButtonE = Instance.new("TextButton") -- Titan ESP
 local closeButton = Instance.new("TextButton") -- زر X
 local minimizeButton = Instance.new("TextButton") -- زر -
 local maximizeButton = Instance.new("TextButton") -- زر +
@@ -64,7 +66,7 @@ print("[DEBUG] ScreenGui created and parented to PlayerGui")
 Frame.Parent = ScreenGui
 Frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 Frame.Position = UDim2.new(0.4, 0, 0.05, 0)
-Frame.Size = UDim2.new(0, 200, 0, 150)
+Frame.Size = UDim2.new(0, 250, 0, 200)
 Frame.Draggable = true
 Frame.Active = true
 print("[DEBUG] Frame created")
@@ -82,13 +84,43 @@ print("[DEBUG] Title created")
 
 tpButton.Parent = Frame
 tpButton.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
-tpButton.Position = UDim2.new(0.1, 0, 0.3, 0)
+tpButton.Position = UDim2.new(0.1, 0, 0.2, 0)
 tpButton.Size = UDim2.new(0.8, 0, 0, 30)
 tpButton.Font = Enum.Font.SourceSans
-tpButton.Text = "Nape Teleport (Click to Toggle)"
+tpButton.Text = "Nape Teleport"
 tpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 tpButton.TextSize = 14
-print("[DEBUG] Teleport button created")
+print("[DEBUG] Nape Teleport button created")
+
+tpButtonF.Parent = Frame
+tpButtonF.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
+tpButtonF.Position = UDim2.new(0.1, 0, 0.35, 0)
+tpButtonF.Size = UDim2.new(0.8, 0, 0, 30)
+tpButtonF.Font = Enum.Font.SourceSans
+tpButtonF.Text = "Titan Farmer"
+tpButtonF.TextColor3 = Color3.fromRGB(255, 255, 255)
+tpButtonF.TextSize = 14
+print("[DEBUG] Titan Farmer button created")
+
+refillButton.Parent = Frame
+refillButton.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
+refillButton.Position = UDim2.new(0.1, 0, 0.5, 0)
+refillButton.Size = UDim2.new(0.8, 0, 0, 30)
+refillButton.Font = Enum.Font.SourceSans
+refillButton.Text = "Tp to Refill"
+refillButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+refillButton.TextSize = 14
+print("[DEBUG] Refill button created")
+
+tpButtonE.Parent = Frame
+tpButtonE.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
+tpButtonE.Position = UDim2.new(0.1, 0, 0.65, 0)
+tpButtonE.Size = UDim2.new(0.8, 0, 0, 30)
+tpButtonE.Font = Enum.Font.SourceSans
+tpButtonE.Text = "Titan ESP"
+tpButtonE.TextColor3 = Color3.fromRGB(255, 255, 255)
+tpButtonE.TextSize = 14
+print("[DEBUG] Titan ESP button created")
 
 closeButton.Parent = Frame
 closeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
@@ -124,6 +156,10 @@ print("[DEBUG] Maximize button created")
 -- متغيرات التحكم
 local NapeLocation
 local TeleportEnabled = false
+local TitanFarmerEnabled = false
+local ESPEnabled = false
+local MaxTeleportDistance = 1250
+local Highlights = {}
 
 -- دالة للعثور على أقرب Nape
 local function findClosestNape()
@@ -147,7 +183,7 @@ local function findClosestNape()
                 local nape = hit:FindFirstChild("Nape")
                 if nape then
                     local distance = (nape.Position - playerPos).Magnitude
-                    if distance < minDistance then
+                    if distance < minDistance and distance <= MaxTeleportDistance then
                         minDistance = distance
                         closestNape = nape
                     end
@@ -164,7 +200,7 @@ local function findClosestNape()
     return NapeLocation
 end
 
--- دالة للنقل الآني
+-- دالة للنقل الآني البسيط
 local function simpleTeleport()
     findClosestNape()
     if NapeLocation then
@@ -178,11 +214,126 @@ local function simpleTeleport()
     end
 end
 
+-- دالة للنقل الآني مع BodyPosition (Titan Farmer)
+local function teleportToNape()
+    findClosestNape()
+    if NapeLocation then
+        local rootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if rootPart then
+            local bodyPos = Instance.new("BodyPosition")
+            bodyPos.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            bodyPos.Position = NapeLocation.Position + Vector3.new(0, 450, 0)
+            bodyPos.Parent = rootPart
+            local bodyGyro = Instance.new("BodyGyro")
+            bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+            bodyGyro.CFrame = rootPart.CFrame
+            bodyGyro.Parent = rootPart
+            print("[DEBUG] BodyPosition and BodyGyro applied for Titan Farmer")
+            return bodyPos, bodyGyro
+        else
+            print("[DEBUG] HumanoidRootPart not found for Titan Farmer")
+        end
+    end
+    return nil, nil
+end
+
+-- دالة لإزالة BodyPosition وBodyGyro
+local function removeBodyObjects(bodyPos, bodyGyro)
+    if bodyPos then bodyPos:Destroy() end
+    if bodyGyro then bodyGyro:Destroy() end
+    print("[DEBUG] Body objects removed")
+end
+
+-- تفعيل/تعطيل Titan Farmer
+local function toggleTitanFarmer()
+    TitanFarmerEnabled = not TitanFarmerEnabled
+    tpButtonF.BackgroundColor3 = TitanFarmerEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
+    if TitanFarmerEnabled then
+        local bodyPos, bodyGyro = teleportToNape()
+        spawn(function()
+            while TitanFarmerEnabled and wait(1) do
+                findClosestNape()
+                if NapeLocation and bodyPos and bodyGyro then
+                    bodyPos.Position = NapeLocation.Position + Vector3.new(0, 300, 0)
+                    bodyGyro.CFrame = LocalPlayer.Character and LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart.CFrame
+                end
+            end
+            removeBodyObjects(bodyPos, bodyGyro)
+        end)
+        print("[DEBUG] Titan Farmer enabled")
+    else
+        print("[DEBUG] Titan Farmer disabled")
+    end
+end
+
+-- دالة لإنشاء Highlight لـ ESP
+local function createHighlight(model)
+    if not model:FindFirstChildOfClass("Highlight") then
+        local highlight = Instance.new("Highlight")
+        highlight.Adornee = model
+        highlight.FillTransparency = 0.65
+        highlight.FillColor = Color3.new(1, 1, 1)
+        highlight.OutlineTransparency = 0
+        highlight.OutlineColor = Color3.new(1, 1, 1)
+        highlight.Enabled = ESPEnabled
+        highlight.Parent = model
+        table.insert(Highlights, highlight)
+        print("[DEBUG] Highlight created for " .. model.Name)
+    end
+end
+
+-- دالة لتطبيق ESP على العمالقة
+local function applyESP()
+    local titansFolder = Workspace:FindFirstChild("Titans")
+    if titansFolder then
+        for _, titan in pairs(titansFolder:GetChildren()) do
+            local fake = titan:FindFirstChild("Fake")
+            if fake then
+                createHighlight(fake)
+            end
+        end
+        print("[DEBUG] ESP applied to Titans")
+    else
+        print("[DEBUG] Titans folder not found for ESP")
+    end
+end
+
+-- تفعيل/تعطيل ESP
+local function toggleESP()
+    ESPEnabled = not ESPEnabled
+    tpButtonE.BackgroundColor3 = ESPEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
+    if ESPEnabled then
+        applyESP()
+    else
+        for _, highlight in pairs(Highlights) do
+            highlight:Destroy()
+        end
+        Highlights = {}
+        print("[DEBUG] ESP disabled and highlights removed")
+    end
+end
+
+-- النقل إلى Refill
+local function teleportToRefill()
+    local gasTank = Workspace:FindFirstChild("Unclimbable") and Workspace.Unclimbable:FindFirstChild("Reloads") and Workspace.Unclimbable.Reloads:FindFirstChild("GasTanks") and Workspace.Unclimbable.Reloads.GasTanks:FindFirstChild("GasTank") and Workspace.Unclimbable.Reloads.GasTanks.GasTank:FindFirstChild("GasTank")
+    if gasTank then
+        local rootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if rootPart then
+            rootPart.CFrame = gasTank.CFrame + Vector3.new(0, 25, 0)
+            print("[DEBUG] Teleported to Refill")
+        else
+            print("[DEBUG] HumanoidRootPart not found for Refill")
+        end
+    else
+        print("[DEBUG] GasTank not found in Workspace")
+    end
+end
+
 -- تفعيل/تعطيل النقل الآني
 local function toggleTeleport()
     TeleportEnabled = not TeleportEnabled
     tpButton.BackgroundColor3 = TeleportEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
-    print("[DEBUG] Teleport Enabled: " .. tostring(TeleportEnabled))
+    print("[DEBUG] Nape Teleport Enabled: " .. tostring(TeleportEnabled))
 end
 
 -- دالة لإخفاء/إظهار الواجهة
@@ -223,6 +374,9 @@ end
 
 -- ربط الأحداث
 tpButton.MouseButton1Click:Connect(toggleTeleport)
+tpButtonF.MouseButton1Click:Connect(toggleTitanFarmer)
+refillButton.MouseButton1Click:Connect(teleportToRefill)
+tpButtonE.MouseButton1Click:Connect(toggleESP)
 closeButton.MouseButton1Click:Connect(removeScript)
 minimizeButton.MouseButton1Click:Connect(toggleFrameVisibility)
 maximizeButton.MouseButton1Click:Connect(toggleFrameVisibility)
