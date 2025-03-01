@@ -109,7 +109,7 @@ refillButton.Parent = Frame
 refillButton.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
 refillButton.Position = UDim2.new(0.1, 0, 0.5, 0)
 refillButton.Size = UDim2.new(0.8, 0, 0, 30)
-refillButton.Font = Enum.Font.SourceSans
+RefillButton.Font = Enum.Font.SourceSans
 refillButton.Text = "Tp to Refill"
 refillButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 refillButton.TextSize = 14
@@ -161,8 +161,21 @@ local NapeLocation
 local TeleportEnabled = false
 local TitanFarmerEnabled = false
 local ESPEnabled = false
-local MaxTeleportDistance = 1250
+local MaxTeleportDistance = 500 -- مسافة معقولة لتجنب النقل البعيد
+
 local Highlights = {}
+
+-- دالة للتحقق من وجود ODM Gear وجاهزيتها
+local function isODMGearReady()
+    local character = LocalPlayer.Character
+    if not character then return false end
+    local tool = character:FindFirstChildOfClass("Tool")
+    if tool and tool.Name:lower():find("odm") then
+        -- التحقق من أن الأداة نشطة (يمكن تخصيص هذا بناءً على اللعبة)
+        return true
+    end
+    return false
+end
 
 -- دالة للعثور على أقرب Nape حي فقط
 local function findClosestNape()
@@ -201,7 +214,7 @@ local function findClosestNape()
     if NapeLocation then
         print("[DEBUG] Closest living Nape found at " .. tostring(NapeLocation.Position))
     else
-        print("[DEBUG] No living Nape found")
+        print("[DEBUG] No living Nape found within range")
     end
     return NapeLocation
 end
@@ -220,48 +233,51 @@ local function attackTitan()
         return
     end
 
-    -- محاكاة هجوم ODM Gear بحركة سريعة نحو Nape
-    if NapeLocation then
+    if NapeLocation and isODMGearReady() then
         local startPos = rootPart.Position
         local endPos = NapeLocation.Position
-        for i = 0, 1, 0.2 do -- تحريك اللاعب بسرعة نحو Nape
+        -- تحريك اللاعب بسرعة نحو Nape لضمان الضربة
+        for i = 0, 1, 0.1 do
             rootPart.CFrame = CFrame.new(startPos:Lerp(endPos, i)) * CFrame.lookAt(rootPart.Position, NapeLocation.Position)
             wait(0.05)
         end
-        -- تفعيل الأداة إن وجدت
         local tool = character:FindFirstChildOfClass("Tool")
         if tool then
             tool:Activate()
             print("[DEBUG] ODM Gear activated for attack")
-            wait(0.3) -- تأخير للسماح للهجوم بالتسجيل
+            wait(0.5)
+            -- دفعة إضافية لضمان الضربة
+            humanoid.WalkSpeed = 100
+            rootPart.Velocity = (NapeLocation.Position - rootPart.Position).Unit * 50
+            wait(0.3)
+            humanoid.WalkSpeed = 16
         end
-        -- محاولة إتلاف العملاق مباشرة كحل احتياطي
-        local titan = NapeLocation.Parent and NapeLocation.Parent.Parent and NapeLocation.Parent.Parent.Parent
-        if titan then
-            local titanHumanoid = titan:FindFirstChildOfClass("Humanoid")
-            if titanHumanoid then
-                titanHumanoid:TakeDamage(100)
-                print("[DEBUG] Attempted direct damage to titan (100)")
-            end
-        end
+    else
+        print("[DEBUG] ODM Gear not ready or Nape not found, skipping attack")
     end
 end
 
 -- دالة للنقل الآني مع الهجوم التلقائي
 local function teleportAndKill()
     local success, err = pcall(function()
-        findClosestNape()
-        if NapeLocation then
-            local rootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if rootPart then
-                rootPart.CFrame = CFrame.new(NapeLocation.Position + Vector3.new(0, 2, 0)) * CFrame.lookAt(rootPart.Position, NapeLocation.Position)
-                print("[DEBUG] Teleported to Nape")
-                wait(0.2)
-                attackTitan()
-                wait(0.5) -- تأخير للسماح بتسجيل الهجوم
+        if isODMGearReady() then
+            findClosestNape()
+            if NapeLocation then
+                local rootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if rootPart then
+                    rootPart.CFrame = CFrame.new(NapeLocation.Position + Vector3.new(0, 2, 0)) * CFrame.lookAt(rootPart.Position, NapeLocation.Position)
+                    print("[DEBUG] Teleported to Nape")
+                    wait(0.2)
+                    attackTitan()
+                    wait(0.5)
+                else
+                    print("[DEBUG] HumanoidRootPart not found for teleport")
+                end
             else
-                print("[DEBUG] HumanoidRootPart not found for teleport")
+                print("[DEBUG] No Nape found, pausing teleport")
             end
+        else
+            print("[DEBUG] ODM Gear not ready, pausing teleport")
         end
     end)
     if not success then
@@ -272,23 +288,27 @@ end
 -- دالة للنقل الآني مع BodyPosition (Titan Farmer)
 local function teleportToNape()
     local success, err = pcall(function()
-        findClosestNape()
-        if NapeLocation then
-            local rootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if rootPart then
-                local bodyPos = Instance.new("BodyPosition")
-                bodyPos.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-                bodyPos.Position = NapeLocation.Position + Vector3.new(0, 5, 0)
-                bodyPos.Parent = rootPart
-                local bodyGyro = Instance.new("BodyGyro")
-                bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-                bodyGyro.CFrame = CFrame.lookAt(rootPart.Position, NapeLocation.Position)
-                bodyGyro.Parent = rootPart
-                print("[DEBUG] BodyPosition and BodyGyro applied for Titan Farmer")
-                return bodyPos, bodyGyro
-            else
-                print("[DEBUG] HumanoidRootPart not found for Titan Farmer")
+        if isODMGearReady() then
+            findClosestNape()
+            if NapeLocation then
+                local rootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if rootPart then
+                    local bodyPos = Instance.new("BodyPosition")
+                    bodyPos.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                    bodyPos.Position = NapeLocation.Position + Vector3.new(0, 5, 0)
+                    bodyPos.Parent = rootPart
+                    local bodyGyro = Instance.new("BodyGyro")
+                    bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+                    bodyGyro.CFrame = CFrame.lookAt(rootPart.Position, NapeLocation.Position)
+                    bodyGyro.Parent = rootPart
+                    print("[DEBUG] BodyPosition and BodyGyro applied for Titan Farmer")
+                    return bodyPos, bodyGyro
+                else
+                    print("[DEBUG] HumanoidRootPart not found for Titan Farmer")
+                end
             end
+        else
+            print("[DEBUG] ODM Gear not ready, skipping Titan Farmer teleport")
         end
     end)
     if not success then
@@ -314,23 +334,31 @@ local function toggleTitanFarmer()
         spawn(function()
             while TitanFarmerEnabled do
                 local success, err = pcall(function()
-                    local currentTitan = NapeLocation and NapeLocation.Parent and NapeLocation.Parent.Parent and NapeLocation.Parent.Parent.Parent
-                    if not currentTitan or not currentTitan:FindFirstChildOfClass("Humanoid") or currentTitan:FindFirstChildOfClass("Humanoid").Health <= 0 then
-                        removeBodyObjects(bodyPos, bodyGyro)
-                        wait(0.1) -- تأخير بسيط قبل البحث عن عملاق جديد
-                        bodyPos, bodyGyro = teleportToNape()
-                        wait(0.2)
-                        attackTitan()
-                    elseif NapeLocation and bodyPos and bodyGyro then
-                        bodyPos.Position = NapeLocation.Position + Vector3.new(0, 5, 0)
-                        bodyGyro.CFrame = CFrame.lookAt(bodyPos.Position, NapeLocation.Position)
-                        attackTitan()
+                    if isODMGearReady() then
+                        local currentTitan = NapeLocation and NapeLocation.Parent and NapeLocation.Parent.Parent and NapeLocation.Parent.Parent.Parent
+                        if not currentTitan or not currentTitan:FindFirstChildOfClass("Humanoid") or currentTitan:FindFirstChildOfClass("Humanoid").Health <= 0 then
+                            removeBodyObjects(bodyPos, bodyGyro)
+                            wait(0.1)
+                            bodyPos, bodyGyro = teleportToNape()
+                            if NapeLocation then
+                                wait(0.2)
+                                attackTitan()
+                            end
+                        elseif NapeLocation and bodyPos and bodyGyro then
+                            bodyPos.Position = NapeLocation.Position + Vector3.new(0, 5, 0)
+                            bodyGyro.CFrame = CFrame.lookAt(bodyPos.Position, NapeLocation.Position)
+                            attackTitan()
+                        else
+                            print("[DEBUG] No Nape found, waiting for new titan")
+                        end
+                    else
+                        print("[DEBUG] ODM Gear not ready, pausing Titan Farmer")
                     end
                 end)
                 if not success then
                     print("[DEBUG] Error in Titan Farmer loop: " .. err)
                     removeBodyObjects(bodyPos, bodyGyro)
-                    bodyPos, bodyGyro = teleportToNape() -- إعادة المحاولة عند الخطأ
+                    bodyPos, bodyGyro = teleportToNape()
                 end
                 wait(1)
             end
@@ -414,11 +442,15 @@ local function toggleTeleport()
             while TeleportEnabled do
                 local success, err = pcall(function()
                     teleportAndKill()
+                    if not NapeLocation or not isODMGearReady() then
+                        print("[DEBUG] No living Nape or ODM Gear not ready, pausing teleport")
+                        wait(2) -- تأخير إضافي لتجنب النقل غير الضروري
+                    end
                 end)
                 if not success then
                     print("[DEBUG] Error in Nape Teleport loop: " .. err)
                 end
-                wait(1.5) -- تأخير للسماح بتسجيل الهجوم
+                wait(1.5)
             end
         end)
         print("[DEBUG] Nape Teleport with Auto Kill enabled")
