@@ -73,22 +73,6 @@ wallHackButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- تعيين فريق للاعب تلقائيًا (يتم تشغيل هذا من جانب الخادم)
-local function assignTeam()
-    if not player.Team then
-        player.Team = game.Teams:FindFirstChild("Entente")
-        print(player.Name .. " تم تعيينه لفريق Entente")
-    end
-end
-
--- تأكد من تعيين الفريق عند انضمام اللاعب
-player.CharacterAdded:Connect(function()
-    assignTeam()
-end)
-if player.Character then
-    assignTeam()
-end
-
 -- التحكم بزر الماوس الأيمن
 mouse.Button2Down:Connect(function()
     if aimBotEnabled then
@@ -110,12 +94,17 @@ local function getNearestEnemy()
         return nil
     end
     
+    -- التحقق من أن اللاعب لديه فريق
+    if not player.Team then
+        print("Aim Bot: يرجى اختيار فريق أولاً (Entente أو Central)")
+        return nil
+    end
+    
     local closestEnemy = nil
     local closestDistance = math.huge
     
     for _, otherPlayer in pairs(game.Players:GetPlayers()) do
         if otherPlayer ~= player then
-            -- إذا كان هناك فرق، تحقق من الفريق
             if otherPlayer.Team and player.Team and otherPlayer.Team ~= player.Team then
                 local enemyChar = otherPlayer.Character
                 if enemyChar and enemyChar:FindFirstChild("Humanoid") and enemyChar.Humanoid.Health > 0 then
@@ -124,7 +113,11 @@ local function getNearestEnemy()
                         closestDistance = distance
                         closestEnemy = enemyChar
                     end
+                else
+                    print("Aim Bot: العدو " .. otherPlayer.Name .. " ليس لديه شخصية أو ميت")
                 end
+            else
+                print("Aim Bot: لم يتم تعيين فريق لـ " .. otherPlayer.Name)
             end
         end
     end
@@ -139,11 +132,23 @@ game:GetService("RunService").RenderStepped:Connect(function()
             camera.CFrame = CFrame.new(camera.CFrame.Position, target.Head.Position)
             print("Aim Bot: يصوّب على " .. target.Name)
             
-            -- إطلاق النار تلقائيًا
-            local tool = player.Character:FindFirstChildOfClass("Tool")
-            if tool then
-                tool:Activate()
-            end
+            -- إطلاق النار مباشرة
+            local targetPos = target.Head.Position
+            local bullet = Instance.new("Part")
+            bullet.Size = Vector3.new(0.2, 0.2, 2)
+            bullet.BrickColor = BrickColor.new("Bright yellow")
+            bullet.CFrame = CFrame.new(player.Character.Head.Position, targetPos)
+            bullet.Velocity = (targetPos - player.Character.Head.Position).Unit * 100
+            bullet.Parent = game.Workspace
+            game.Debris:AddItem(bullet, 2)
+            
+            bullet.Touched:Connect(function(hit)
+                local humanoid = hit.Parent:FindFirstChild("Humanoid")
+                if humanoid and hit.Parent ~= player.Character then
+                    humanoid:TakeDamage(20)
+                    bullet:Destroy()
+                end
+            end)
         else
             print("Aim Bot: لا يوجد عدو قريب")
         end
@@ -176,32 +181,3 @@ local function createWallhackGun()
         end
     end)
 end
-
--- إنشاء بندقية عادية
-local function createRifle()
-    local tool = Instance.new("Tool")
-    tool.Name = "Rifle"
-    tool.RequiresHandle = false
-    tool.Parent = player.Backpack
-    
-    tool.Activated:Connect(function()
-        local target = mouse.Hit.Position
-        local bullet = Instance.new("Part")
-        bullet.Size = Vector3.new(0.2, 0.2, 2)
-        bullet.BrickColor = BrickColor.new("Bright yellow")
-        bullet.CFrame = CFrame.new(player.Character.Head.Position, target)
-        bullet.Velocity = (target - player.Character.Head.Position).Unit * 100
-        bullet.Parent = game.Workspace
-        game.Debris:AddItem(bullet, 2)
-        
-        bullet.Touched:Connect(function(hit)
-            local humanoid = hit.Parent:FindFirstChild("Humanoid")
-            if humanoid and hit.Parent ~= player.Character then
-                humanoid:TakeDamage(20)
-                bullet:Destroy()
-            end
-        end)
-    end)
-end
-
-createRifle()
