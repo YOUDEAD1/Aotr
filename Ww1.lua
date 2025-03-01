@@ -40,7 +40,7 @@ end)
 -- متغيرات التحكم
 local aimBotEnabled = false
 local wallHackEnabled = false
-local isAiming = false -- لتتبع زر الماوس الأيمن
+local isAiming = false
 
 -- زر Aim Bot
 local aimBotButton = Instance.new("TextButton")
@@ -73,33 +73,57 @@ wallHackButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- التحكم بزر الماوس الأيمن للـ Aim Bot
+-- تعيين فريق للاعب تلقائيًا (يتم تشغيل هذا من جانب الخادم)
+local function assignTeam()
+    if not player.Team then
+        player.Team = game.Teams:FindFirstChild("Entente")
+        print(player.Name .. " تم تعيينه لفريق Entente")
+    end
+end
+
+-- تأكد من تعيين الفريق عند انضمام اللاعب
+player.CharacterAdded:Connect(function()
+    assignTeam()
+end)
+if player.Character then
+    assignTeam()
+end
+
+-- التحكم بزر الماوس الأيمن
 mouse.Button2Down:Connect(function()
     if aimBotEnabled then
         isAiming = true
+        print("Aim Bot: بدأ التصويب")
     end
 end)
 
 mouse.Button2Up:Connect(function()
     isAiming = false
+    print("Aim Bot: توقف التصويب")
 end)
 
--- البحث عن أقرب عدو (يعتمد على الفرق)
+-- البحث عن أقرب عدو
 local function getNearestEnemy()
     local character = player.Character
-    if not character or not character:FindFirstChild("HumanoidRootPart") then return nil end
+    if not character or not character:FindFirstChild("HumanoidRootPart") then
+        print("Aim Bot: الشخصية غير جاهزة")
+        return nil
+    end
     
     local closestEnemy = nil
     local closestDistance = math.huge
     
     for _, otherPlayer in pairs(game.Players:GetPlayers()) do
-        if otherPlayer ~= player and otherPlayer.Team ~= player.Team then
-            local enemyChar = otherPlayer.Character
-            if enemyChar and enemyChar:FindFirstChild("Humanoid") and enemyChar.Humanoid.Health > 0 then
-                local distance = (character.HumanoidRootPart.Position - enemyChar.HumanoidRootPart.Position).Magnitude
-                if distance < closestDistance and distance < 100 then
-                    closestDistance = distance
-                    closestEnemy = enemyChar
+        if otherPlayer ~= player then
+            -- إذا كان هناك فرق، تحقق من الفريق
+            if otherPlayer.Team and player.Team and otherPlayer.Team ~= player.Team then
+                local enemyChar = otherPlayer.Character
+                if enemyChar and enemyChar:FindFirstChild("Humanoid") and enemyChar.Humanoid.Health > 0 then
+                    local distance = (character.HumanoidRootPart.Position - enemyChar.HumanoidRootPart.Position).Magnitude
+                    if distance < closestDistance and distance < 100 then
+                        closestDistance = distance
+                        closestEnemy = enemyChar
+                    end
                 end
             end
         end
@@ -107,19 +131,21 @@ local function getNearestEnemy()
     return closestEnemy
 end
 
--- منطق الـ Aim Bot (تصويب على الرأس عند زر الماوس الأيمن)
+-- منطق الـ Aim Bot
 game:GetService("RunService").RenderStepped:Connect(function()
     if aimBotEnabled and isAiming and player.Character and player.Character:FindFirstChild("Humanoid") then
         local target = getNearestEnemy()
         if target and target:FindFirstChild("Head") then
-            -- توجيه الكاميرا نحو رأس العدو
             camera.CFrame = CFrame.new(camera.CFrame.Position, target.Head.Position)
+            print("Aim Bot: يصوّب على " .. target.Name)
             
-            -- إطلاق النار تلقائيًا إذا كانت هناك بندقية
+            -- إطلاق النار تلقائيًا
             local tool = player.Character:FindFirstChildOfClass("Tool")
-            if tool and tool.Name == "Rifle" then -- استبدل "Rifle" باسم بندقيتك
+            if tool then
                 tool:Activate()
             end
+        else
+            print("Aim Bot: لا يوجد عدو قريب")
         end
     end
 end)
@@ -138,10 +164,9 @@ local function createWallhackGun()
             local hit, position = workspace:FindPartOnRayWithIgnoreList(ray, ignoreList)
             
             if hit and hit.Parent:FindFirstChild("Humanoid") then
-                hit.Parent.Humanoid:TakeDamage(50) -- ضرر مباشر يخترق الجدران
+                hit.Parent.Humanoid:TakeDamage(50)
             end
             
-            -- تأثير بصري للرصاصة
             local bullet = Instance.new("Part")
             bullet.Size = Vector3.new(0.2, 0.2, 2)
             bullet.BrickColor = BrickColor.new("Bright yellow")
@@ -152,7 +177,7 @@ local function createWallhackGun()
     end)
 end
 
--- إعداد بندقية عادية (اختياري)
+-- إنشاء بندقية عادية
 local function createRifle()
     local tool = Instance.new("Tool")
     tool.Name = "Rifle"
@@ -179,5 +204,4 @@ local function createRifle()
     end)
 end
 
--- إضافة بندقية عادية عند بدء اللعبة (اختياري)
 createRifle()
