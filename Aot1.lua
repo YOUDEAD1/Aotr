@@ -208,19 +208,38 @@ end
 -- دالة لمحاكاة الهجوم
 local function attackTitan()
     local character = LocalPlayer.Character
-    if character then
-        local tool = character:FindFirstChildOfClass("Tool")
-        if tool then
-            -- محاكاة تفعيل الأداة للهجوم
-            tool:Activate()
-            print("[DEBUG] Tool activated for attack")
-        else
-            -- إذا لم يكن هناك أداة، محاكاة نقرة هجوم
-            local humanoid = character:FindFirstChild("Humanoid")
-            if humanoid then
-                humanoid:ChangeState(Enum.HumanoidStateType.Jumping) -- لمحاكاة حركة هجوم
-                print("[DEBUG] Simulated attack via jump")
+    if not character then
+        print("[DEBUG] Character not found for attack")
+        return
+    end
+    local humanoid = character:FindFirstChild("Humanoid")
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoid or not rootPart then
+        print("[DEBUG] Humanoid or HumanoidRootPart not found for attack")
+        return
+    end
+
+    -- التحقق من وجود أداة وتفعيلها
+    local tool = character:FindFirstChildOfClass("Tool")
+    if tool then
+        tool:Activate()
+        print("[DEBUG] Tool activated for attack")
+        wait(0.5) -- تأخير للسماح للهجوم بالتسجيل
+    else
+        -- إذا لم يكن هناك أداة، محاكاة هجوم مباشر
+        if NapeLocation then
+            local titan = NapeLocation.Parent and NapeLocation.Parent.Parent and NapeLocation.Parent.Parent.Parent
+            if titan then
+                local titanHumanoid = titan:FindFirstChildOfClass("Humanoid")
+                if titanHumanoid then
+                    titanHumanoid:TakeDamage(50) -- محاولة إتلاف العملاق مباشرة
+                    print("[DEBUG] Attempted direct damage to titan (50)")
+                end
             end
+            -- محاكاة حركة هجوم
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            wait(0.5) -- تأخير لإتمام الهجوم
+            print("[DEBUG] Simulated attack via jump")
         end
     end
 end
@@ -231,10 +250,12 @@ local function teleportAndKill()
     if NapeLocation then
         local rootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if rootPart then
-            rootPart.CFrame = CFrame.new(NapeLocation.Position + Vector3.new(0, 10, 0))
+            -- النقل إلى موقع قريب من Nape لضمان الهجوم
+            rootPart.CFrame = CFrame.new(NapeLocation.Position + Vector3.new(0, 5, 0)) -- ارتفاع أقل للبقاء قريبًا
             print("[DEBUG] Teleported to Nape")
-            wait(0.1) -- تأخير بسيط لضمان استقرار الموقع
+            wait(0.2) -- تأخير لضمان الاستقرار
             attackTitan()
+            wait(0.5) -- تأخير إضافي للسماح للهجوم بالتسجيل قبل النقل التالي
         else
             print("[DEBUG] HumanoidRootPart not found for teleport")
         end
@@ -249,7 +270,7 @@ local function teleportToNape()
         if rootPart then
             local bodyPos = Instance.new("BodyPosition")
             bodyPos.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            bodyPos.Position = NapeLocation.Position + Vector3.new(0, 450, 0)
+            bodyPos.Position = NapeLocation.Position + Vector3.new(0, 10, 0) -- ارتفاع أقل للهجوم
             bodyPos.Parent = rootPart
             local bodyGyro = Instance.new("BodyGyro")
             bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
@@ -283,10 +304,10 @@ local function toggleTitanFarmer()
                 if currentTitan and currentTitan:FindFirstChildOfClass("Humanoid") and currentTitan:FindFirstChildOfClass("Humanoid").Health <= 0 then
                     removeBodyObjects(bodyPos, bodyGyro)
                     bodyPos, bodyGyro = teleportToNape()
-                    wait(0.1)
+                    wait(0.2)
                     attackTitan()
                 elseif NapeLocation and bodyPos and bodyGyro then
-                    bodyPos.Position = NapeLocation.Position + Vector3.new(0, 300, 0)
+                    bodyPos.Position = NapeLocation.Position + Vector3.new(0, 10, 0) -- ارتفاع أقل للهجوم
                     bodyGyro.CFrame = LocalPlayer.Character and LocalPlayer.Character.HumanoidRootPart and LocalPlayer.Character.HumanoidRootPart.CFrame
                     attackTitan()
                 end
@@ -368,7 +389,7 @@ local function toggleTeleport()
     tpButton.BackgroundColor3 = TeleportEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
     if TeleportEnabled then
         spawn(function()
-            while TeleportEnabled and wait(1) do
+            while TeleportEnabled and wait(1.5) do -- زيادة التأخير لإعطاء وقت للهجوم
                 teleportAndKill()
             end
         end)
