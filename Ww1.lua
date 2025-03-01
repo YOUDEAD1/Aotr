@@ -1,7 +1,13 @@
+-- التأكد من تحميل شخصية اللاعب
 local player = game.Players.LocalPlayer
+if not player.Character then
+    player.CharacterAdded:Wait()
+end
+
+-- إعداد الـ GUI
 local gui = Instance.new("ScreenGui")
 gui.Name = "ProCheatMenu"
-gui.Parent = game.StarterGui
+gui.Parent = game.CoreGui -- CoreGui لضمان ظهور الـ GUI في اللعبة
 
 -- إعداد الإطار الرئيسي
 local frame = Instance.new("Frame")
@@ -74,7 +80,9 @@ wallHackButton.MouseButton1Click:Connect(function()
         tool.Parent = player.Backpack
         tool.Activated:Connect(function()
             if wallHackEnabled then
-                local ray = Ray.new(player.Character.Head.Position, player:GetMouse().Hit.lookVector * 1000)
+                local rayOrigin = player.Character.Head.Position
+                local rayDirection = player:GetMouse().Hit.lookVector * 1000
+                local ray = Ray.new(rayOrigin, rayDirection)
                 local ignoreList = {player.Character}
                 
                 -- تجاهل TrenchWall بناءً على ما وجدناه في Dex
@@ -119,7 +127,7 @@ weaponButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- زر زيادة السرعة (ميزة إضافية)
+-- زر زيادة السرعة
 local speedButton = Instance.new("TextButton")
 speedButton.Parent = frame
 speedButton.Size = UDim2.new(0, 220, 0, 50)
@@ -169,3 +177,5 @@ game:GetService("RunService").RenderStepped:Connect(function()
         end
     end
 end)
+
+print("Cheat Menu Loaded Successfully!")
