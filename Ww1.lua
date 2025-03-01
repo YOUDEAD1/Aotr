@@ -1,13 +1,19 @@
--- التأكد من تحميل شخصية اللاعب
+-- التأكد من تحميل اللعبة
 local player = game.Players.LocalPlayer
 if not player.Character then
     player.CharacterAdded:Wait()
 end
 
+-- التأكد من تحميل Workspace
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
+
 -- إعداد الـ GUI
 local gui = Instance.new("ScreenGui")
 gui.Name = "ProCheatMenu"
-gui.Parent = game.CoreGui -- CoreGui لضمان ظهور الـ GUI في اللعبة
+gui.IgnoreGuiInset = true -- لضمان ظهور الـ GUI بشكل صحيح
+gui.Parent = game.CoreGui
 
 -- إعداد الإطار الرئيسي
 local frame = Instance.new("Frame")
@@ -79,15 +85,19 @@ wallHackButton.MouseButton1Click:Connect(function()
         tool.RequiresHandle = false
         tool.Parent = player.Backpack
         tool.Activated:Connect(function()
-            if wallHackEnabled then
-                local rayOrigin = player.Character.Head.Position
+            if wallHackEnabled and player.Character then
+                local head = player.Character:FindFirstChild("Head")
+                if not head then return end
+                
+                local rayOrigin = head.Position
                 local rayDirection = player:GetMouse().Hit.lookVector * 1000
                 local ray = Ray.new(rayOrigin, rayDirection)
                 local ignoreList = {player.Character}
                 
-                -- تجاهل TrenchWall بناءً على ما وجدناه في Dex
-                if workspace:FindFirstChild("TRENCH") then
-                    for _, trenchWall in pairs(workspace.TRENCH:GetChildren()) do
+                -- تجاهل TrenchWall
+                local trench = workspace:FindFirstChild("TRENCH")
+                if trench then
+                    for _, trenchWall in pairs(trench:GetChildren()) do
                         if trenchWall.Name == "TrenchWall" then
                             table.insert(ignoreList, trenchWall)
                         end
@@ -97,7 +107,7 @@ wallHackButton.MouseButton1Click:Connect(function()
                 local hit, position = workspace:FindPartOnRayWithIgnoreList(ray, ignoreList)
                 
                 if hit and hit.Parent:FindFirstChild("Humanoid") then
-                    hit.Parent.Humanoid:TakeDamage(50) -- ضرر مباشر للأعداء
+                    hit.Parent.Humanoid:TakeDamage(50)
                 end
             end
         end)
@@ -113,17 +123,23 @@ weaponButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 weaponButton.Text = "Get WW1 Rifle"
 weaponButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 weaponButton.MouseButton1Click:Connect(function()
-    if workspace:FindFirstChild("TRENCH") and workspace.TRENCH:FindFirstChild("1914 - THE GREAT WAR") then
-        local rifle = workspace.TRENCH["1914 - THE GREAT WAR"]:FindFirstChild("Rifle")
-        if rifle then
-            local clonedRifle = rifle:Clone()
-            clonedRifle.Parent = player.Backpack
-            print("تم إعطاؤك بندقية WW1!")
+    local trench = workspace:FindFirstChild("TRENCH")
+    if trench then
+        local greatWar = trench:FindFirstChild("1914 - THE GREAT WAR")
+        if greatWar then
+            local rifle = greatWar:FindFirstChildWhichIsA("Tool")
+            if rifle then
+                local clonedRifle = rifle:Clone()
+                clonedRifle.Parent = player.Backpack
+                print("تم إعطاؤك سلاح WW1!")
+            else
+                print("لم يتم العثور على أي سلاح في 1914 - THE GREAT WAR!")
+            end
         else
-            print("لم يتم العثور على السلاح 'Rifle' في 1914 - THE GREAT WAR!")
+            print("لم يتم العثور على 1914 - THE GREAT WAR!")
         end
     else
-        print("لم يتم العثور على 1914 - THE GREAT WAR!")
+        print("لم يتم العثور على TRENCH!")
     end
 end)
 
@@ -138,7 +154,7 @@ speedButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 speedButton.MouseButton1Click:Connect(function()
     local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
     if humanoid then
-        humanoid.WalkSpeed = 32 -- السرعة الافتراضية 16، نضاعفها
+        humanoid.WalkSpeed = 32
         print("تم زيادة سرعتك!")
     end
 end)
@@ -156,7 +172,7 @@ local function getNearestEnemy()
             local enemyChar = otherPlayer.Character
             if enemyChar and enemyChar:FindFirstChild("Humanoid") and enemyChar.Humanoid.Health > 0 then
                 local distance = (character.HumanoidRootPart.Position - enemyChar.HumanoidRootPart.Position).Magnitude
-                if distance < closestDistance and distance < 50 then -- نطاق 50 وحدة
+                if distance < closestDistance and distance < 50 then
                     closestDistance = distance
                     closestEnemy = enemyChar
                 end
