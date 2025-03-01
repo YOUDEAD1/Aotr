@@ -1,9 +1,8 @@
+
 local workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
-local DataStoreService = game:GetService("DataStoreService")
-local SettingsStore = DataStoreService:GetDataStore("TekkitAotRSettings")
 
 -- دالة للعثور على Nape
 local function findNape(hitFolder)
@@ -74,7 +73,7 @@ Title.BorderColor3 = Color3.fromRGB(0, 0, 0)
 Title.BorderSizePixel = 0
 Title.Position = UDim2.new(0.0207602102, 0, -0.00166114408, 0)
 Title.Size = UDim2.new(0, 312, 0, 50)
-Title.Font = Enum.Font.Unknown
+Title.Font = Enum.Font.SourceSans -- استبدلت Unknown بـ SourceSans لأن Solara قد لا يدعم بعض الخطوط
 Title.Text = "Tekkit AotR"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextScaled = true
@@ -99,7 +98,7 @@ TeleportLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
 TeleportLabel.BorderSizePixel = 0
 TeleportLabel.Position = UDim2.new(0.0799999982, 0, 0.0299999993, 0)
 TeleportLabel.Size = UDim2.new(0, 200, 0.0599999987, 0)
-TeleportLabel.Font = Enum.Font.Fondamento
+TeleportLabel.Font = Enum.Font.SourceSans -- استبدلت Fondamento للتوافق
 TeleportLabel.Text = "Nape Teleport"
 TeleportLabel.TextColor3 = Color3.fromRGB(148, 148, 148)
 TeleportLabel.TextSize = 25.000
@@ -113,7 +112,7 @@ TitanFarmerLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
 TitanFarmerLabel.BorderSizePixel = 0
 TitanFarmerLabel.Position = UDim2.new(0.0804597735, 0, 0.104999997, 0)
 TitanFarmerLabel.Size = UDim2.new(0, 200, 0.0599999987, 0)
-TitanFarmerLabel.Font = Enum.Font.Unknown
+TitanFarmerLabel.Font = Enum.Font.SourceSans
 TitanFarmerLabel.Text = "Titan Farmer"
 TitanFarmerLabel.TextColor3 = Color3.fromRGB(148, 148, 148)
 TitanFarmerLabel.TextSize = 20.000
@@ -151,7 +150,7 @@ refillButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
 refillButton.BorderSizePixel = 0
 refillButton.Position = UDim2.new(0.230000004, 0, 0.264999986, 0)
 refillButton.Size = UDim2.new(0, 100, 0, 25)
-refillButton.Font = Enum.Font.Unknown
+refillButton.Font = Enum.Font.SourceSans
 refillButton.Text = "Tp to Refill"
 refillButton.TextColor3 = Color3.fromRGB(148, 148, 148)
 refillButton.TextScaled = true
@@ -166,7 +165,7 @@ espLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
 espLabel.BorderSizePixel = 0
 espLabel.Position = UDim2.new(0.0542302355, 0, 0.181999996, 0)
 espLabel.Size = UDim2.new(0, 200, 0.0599999987, 0)
-espLabel.Font = Enum.Font.Unknown
+espLabel.Font = Enum.Font.SourceSans
 espLabel.Text = "Titan ESP"
 espLabel.TextColor3 = Color3.fromRGB(148, 148, 148)
 espLabel.TextSize = 23.000
@@ -228,14 +227,14 @@ local Highlights = {}
 
 -- دالة للحصول على موقع اللاعب
 local function getPlayerPosition()
-    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-    local rootPart = character:WaitForChild("HumanoidRootPart")
-    if rootPart and rootPart:IsA("BasePart") then
-        return rootPart.Position
-    else
-        warn("HumanoidRootPart not found.")
-        return nil
+    local character = LocalPlayer.Character
+    if character then
+        local rootPart = character:FindFirstChild("HumanoidRootPart")
+        if rootPart then
+            return rootPart.Position
+        end
     end
+    return nil
 end
 
 -- دالة للعثور على أقرب Nape
@@ -245,18 +244,20 @@ local function findClosestNape()
     local minDistance = math.huge
     if titansFolder then
         local playerPos = getPlayerPosition()
-        for _, titan in ipairs(titansFolder:GetChildren()) do
-            if titan:IsA("Model") and titan:FindFirstChildOfClass("Humanoid") then
-                local hitboxes = titan:FindFirstChild("Hitboxes")
-                if hitboxes then
-                    local hit = hitboxes:FindFirstChild("Hit")
-                    if hit then
-                        local nape = hit:FindFirstChild("Nape")
-                        if nape then
-                            local distance = (nape.Position - playerPos).Magnitude
-                            if distance < minDistance and distance <= MaxTeleportDistance then
-                                minDistance = distance
-                                closestNape = nape
+        if playerPos then
+            for _, titan in ipairs(titansFolder:GetChildren()) do
+                if titan:IsA("Model") then
+                    local hitboxes = titan:FindFirstChild("Hitboxes")
+                    if hitboxes then
+                        local hit = hitboxes:FindFirstChild("Hit")
+                        if hit then
+                            local nape = hit:FindFirstChild("Nape")
+                            if nape then
+                                local distance = (nape.Position - playerPos).Magnitude
+                                if distance < minDistance and distance <= MaxTeleportDistance then
+                                    minDistance = distance
+                                    closestNape = nape
+                                end
                             end
                         end
                     end
@@ -264,9 +265,7 @@ local function findClosestNape()
             end
         end
     end
-    if closestNape then
-        NapeLocation = closestNape
-    end
+    NapeLocation = closestNape
     return NapeLocation
 end
 
@@ -313,8 +312,7 @@ local function toggleTitanFarmer()
         findClosestNape()
         local bodyPos, bodyGyro = teleportToNape()
         spawn(function()
-            while TitanFarmerEnabled do
-                wait(1)
+            while TitanFarmerEnabled and wait(1) do
                 findClosestNape()
                 if bodyPos and bodyGyro then
                     bodyPos.Position = NapeLocation.Position + Vector3.new(0, 300, 0)
@@ -325,7 +323,6 @@ local function toggleTitanFarmer()
         end)
     end
     tpButtonF.BackgroundColor3 = TitanFarmerEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
-    saveSettings()
 end
 
 -- دالة لإنشاء Highlight
@@ -348,7 +345,7 @@ local function applyESP()
     local titansFolder = workspace:FindFirstChild("Titans")
     if titansFolder then
         for _, titan in ipairs(titansFolder:GetChildren()) do
-            if titan:IsA("Model") and titan:FindFirstChildOfClass("Humanoid") then
+            if titan:IsA("Model") then
                 local fake = titan:FindFirstChild("Fake")
                 if fake then
                     createHighlight(fake, Color3.new(1, 1, 1), 0.65)
@@ -373,12 +370,11 @@ local function toggleESP(enable)
     else
         applyESP()
     end
-    saveSettings()
 end
 
 -- النقل إلى Refill
-local gasTank = workspace.Unclimbable.Reloads.GasTanks:FindFirstChild("GasTank"):FindFirstChild("GasTank")
 local function teleportToRefill()
+    local gasTank = workspace:FindFirstChild("Unclimbable") and workspace.Unclimbable:FindFirstChild("Reloads") and workspace.Unclimbable.Reloads:FindFirstChild("GasTanks") and workspace.Unclimbable.Reloads.GasTanks:FindFirstChild("GasTank") and workspace.Unclimbable.Reloads.GasTanks.GasTank:FindFirstChild("GasTank")
     local rootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if gasTank and rootPart then
         rootPart.CFrame = gasTank.CFrame + Vector3.new(0, 25, 0)
@@ -389,38 +385,6 @@ end
 local function toggleTeleport()
     TeleportEnabled = not TeleportEnabled
     tpButton.BackgroundColor3 = TeleportEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
-    saveSettings()
-end
-
--- دالة لحفظ الإعدادات
-local function saveSettings()
-    local settings = {
-        TeleportEnabled = TeleportEnabled,
-        TitanFarmerEnabled = TitanFarmerEnabled,
-        ESPEnabled = ESPEnabled
-    }
-    pcall(function()
-        SettingsStore:SetAsync(LocalPlayer.UserId .. "_Settings", settings)
-    end)
-end
-
--- دالة لتحميل الإعدادات
-local function loadSettings()
-    local success, settings = pcall(function()
-        return SettingsStore:GetAsync(LocalPlayer.UserId .. "_Settings")
-    end)
-    if success and settings then
-        TeleportEnabled = settings.TeleportEnabled or false
-        TitanFarmerEnabled = settings.TitanFarmerEnabled or false
-        ESPEnabled = settings.ESPEnabled or false
-        
-        tpButton.BackgroundColor3 = TeleportEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
-        tpButtonF.BackgroundColor3 = TitanFarmerEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
-        tpButtonE.BackgroundColor3 = ESPEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
-        
-        if TitanFarmerEnabled then toggleTitanFarmer() end
-        if ESPEnabled then toggleESP(true) end
-    end
 end
 
 -- دالة لإخفاء/إظهار الواجهة
@@ -441,7 +405,7 @@ end
 
 -- تشغيل توسيع Nape عند البدء
 local function initialize()
-    print("Nape Expander Loaded")
+    print("Nape Expander Loaded - Solara Compatible")
     local titansBasePart = workspace:FindFirstChild("Titans")
     if titansBasePart then
         processTitans(titansBasePart)
@@ -451,7 +415,6 @@ local function initialize()
             processTitans(child)
         end
     end)
-    loadSettings() -- تحميل الإعدادات عند البدء
 end
 
 -- ربط الأحداث
