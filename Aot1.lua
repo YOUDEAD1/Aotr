@@ -165,15 +165,25 @@ local MaxTeleportDistance = 500 -- مسافة معقولة لتجنب النقل
 
 local Highlights = {}
 
--- دالة للتحقق من وجود ODM Gear وجاهزيتها
-local function isODMGearReady()
+-- دالة للتحقق من وجود الشخصية وجاهزيتها
+local function isPlayerReady()
     local character = LocalPlayer.Character
-    if not character then return false end
+    if not character then
+        print("[DEBUG] Character not found")
+        return false
+    end
+    local humanoid = character:FindFirstChild("Humanoid")
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoid or not rootPart or humanoid.Health <= 0 then
+        print("[DEBUG] Humanoid or HumanoidRootPart not found or player dead")
+        return false
+    end
     local tool = character:FindFirstChildOfClass("Tool")
     if tool and tool.Name:lower():find("odm") then
-        -- التحقق من أن الأداة نشطة (يمكن تخصيص هذا بناءً على اللعبة)
+        print("[DEBUG] ODM Gear found and ready")
         return true
     end
+    print("[DEBUG] ODM Gear not found")
     return false
 end
 
@@ -233,10 +243,9 @@ local function attackTitan()
         return
     end
 
-    if NapeLocation and isODMGearReady() then
+    if NapeLocation then
         local startPos = rootPart.Position
         local endPos = NapeLocation.Position
-        -- تحريك اللاعب بسرعة نحو Nape لضمان الضربة
         for i = 0, 1, 0.1 do
             rootPart.CFrame = CFrame.new(startPos:Lerp(endPos, i)) * CFrame.lookAt(rootPart.Position, NapeLocation.Position)
             wait(0.05)
@@ -246,24 +255,29 @@ local function attackTitan()
             tool:Activate()
             print("[DEBUG] ODM Gear activated for attack")
             wait(0.5)
-            -- دفعة إضافية لضمان الضربة
             humanoid.WalkSpeed = 100
             rootPart.Velocity = (NapeLocation.Position - rootPart.Position).Unit * 50
             wait(0.3)
             humanoid.WalkSpeed = 16
+        else
+            print("[DEBUG] No ODM Gear found, attempting movement attack")
+            humanoid.WalkSpeed = 100
+            rootPart.Velocity = (NapeLocation.Position - rootPart.Position).Unit * 50
+            wait(0.5)
+            humanoid.WalkSpeed = 16
         end
     else
-        print("[DEBUG] ODM Gear not ready or Nape not found, skipping attack")
+        print("[DEBUG] No Nape to attack")
     end
 end
 
 -- دالة للنقل الآني مع الهجوم التلقائي
 local function teleportAndKill()
     local success, err = pcall(function()
-        if isODMGearReady() then
+        if isPlayerReady() then
             findClosestNape()
             if NapeLocation then
-                local rootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
                 if rootPart then
                     rootPart.CFrame = CFrame.new(NapeLocation.Position + Vector3.new(0, 2, 0)) * CFrame.lookAt(rootPart.Position, NapeLocation.Position)
                     print("[DEBUG] Teleported to Nape")
@@ -277,7 +291,7 @@ local function teleportAndKill()
                 print("[DEBUG] No Nape found, pausing teleport")
             end
         else
-            print("[DEBUG] ODM Gear not ready, pausing teleport")
+            print("[DEBUG] Player not ready (no ODM Gear or dead), pausing teleport")
         end
     end)
     if not success then
@@ -288,10 +302,10 @@ end
 -- دالة للنقل الآني مع BodyPosition (Titan Farmer)
 local function teleportToNape()
     local success, err = pcall(function()
-        if isODMGearReady() then
+        if isPlayerReady() then
             findClosestNape()
             if NapeLocation then
-                local rootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
                 if rootPart then
                     local bodyPos = Instance.new("BodyPosition")
                     bodyPos.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
@@ -308,7 +322,7 @@ local function teleportToNape()
                 end
             end
         else
-            print("[DEBUG] ODM Gear not ready, skipping Titan Farmer teleport")
+            print("[DEBUG] Player not ready, skipping Titan Farmer teleport")
         end
     end)
     if not success then
@@ -334,7 +348,7 @@ local function toggleTitanFarmer()
         spawn(function()
             while TitanFarmerEnabled do
                 local success, err = pcall(function()
-                    if isODMGearReady() then
+                    if isPlayerReady() then
                         local currentTitan = NapeLocation and NapeLocation.Parent and NapeLocation.Parent.Parent and NapeLocation.Parent.Parent.Parent
                         if not currentTitan or not currentTitan:FindFirstChildOfClass("Humanoid") or currentTitan:FindFirstChildOfClass("Humanoid").Health <= 0 then
                             removeBodyObjects(bodyPos, bodyGyro)
@@ -352,7 +366,7 @@ local function toggleTitanFarmer()
                             print("[DEBUG] No Nape found, waiting for new titan")
                         end
                     else
-                        print("[DEBUG] ODM Gear not ready, pausing Titan Farmer")
+                        print("[DEBUG] Player not ready, pausing Titan Farmer")
                     end
                 end)
                 if not success then
@@ -442,9 +456,9 @@ local function toggleTeleport()
             while TeleportEnabled do
                 local success, err = pcall(function()
                     teleportAndKill()
-                    if not NapeLocation or not isODMGearReady() then
-                        print("[DEBUG] No living Nape or ODM Gear not ready, pausing teleport")
-                        wait(2) -- تأخير إضافي لتجنب النقل غير الضروري
+                    if not NapeLocation or not isPlayerReady() then
+                        print("[DEBUG] No living Nape or player not ready, pausing teleport")
+                        wait(2)
                     end
                 end)
                 if not success then
