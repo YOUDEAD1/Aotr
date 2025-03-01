@@ -1,4 +1,5 @@
--- إعداد واجهة المستخدم
+
+-- سكريبت رقم 1
 local screenGui = Instance.new("ScreenGui")
 local frame = Instance.new("Frame")
 local titleLabel = Instance.new("TextLabel")
@@ -162,323 +163,146 @@ local highlights = {}
 -- دالة للحصول على موقع HumanoidRootPart
 local function getPlayerPosition()
     local character = player.Character or player.CharacterAdded:Wait()
-    local rootPart = character:WaitForChild("HumanoidRootPart")
-    if rootPart and rootPart:IsA("BasePart") then
-        local position = rootPart.Position
-        print("HumanoidRootPart Location:", position)
-        return position
-    else
-        warn("HumanoidRootPart not found for LocalPlayer.")
-        return nil
-    end
+    return character:WaitForChild("HumanoidRootPart").Position
 end
 
--- دالة للعثور على أقرب Nape
+-- دالة لتحديد ناب قريب
 local function findClosestNape()
-    local titansFolder = Workspace:FindFirstChild("Titans")
-    local closestNape = nil
-    local minDistance = math.huge
-    if titansFolder then
-        local playerPos = getPlayerPosition()
-        for _, titan in ipairs(titansFolder:GetChildren()) do
-            if titan:IsA("Model") and titan:FindFirstChildOfClass("Humanoid") then
-                local hitboxes = titan:FindFirstChild("Hitboxes")
-                if hitboxes then
-                    local hit = hitboxes:FindFirstChild("Hit")
-                    if hit then
-                        local nape = hit:FindFirstChild("Nape")
-                        if nape then
-                            local distance = (nape.Position - playerPos).Magnitude
-                            if distance < minDistance and distance <= maxTeleportDistance then
-                                minDistance = distance
-                                closestNape = nape
-                            end
-                        end
-                    end
-                end
+    local closest = nil
+    local minDist = maxTeleportDistance
+    for _, nape in pairs(Workspace.Nape:GetChildren()) do
+        if nape:IsA("Model") and nape:FindFirstChild("HumanoidRootPart") then
+            local dist = (getPlayerPosition() - nape.HumanoidRootPart.Position).Magnitude
+            if dist < minDist then
+                closest = nape
+                minDist = dist
             end
         end
-    else
-        warn("Titans folder not found in Workspace.")
     end
+    return closest
+end
+
+-- تفعيل النقل إلى الناب
+tpButton.MouseButton1Click:Connect(function()
+    closestNape = findClosestNape()
     if closestNape then
-        napeLocation = closestNape
-        print("Closest NapeLocation set to:", napeLocation.Position)
-    else
-        warn("No Nape part found within maximum teleport distance.")
+        player.Character:WaitForChild("HumanoidRootPart").CFrame = closestNape.HumanoidRootPart.CFrame
     end
-    return napeLocation
-end
+end)
 
--- دالة للتحرك إلى Nape باستخدام BodyPosition و BodyGyro
-local function teleportToNape()
-    if napeLocation then
-        local character = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-        if character then
-            local bodyPosition = Instance.new("BodyPosition")
-            bodyPosition.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            bodyPosition.Position = napeLocation.Position + Vector3.new(0, 450, 0)
-            bodyPosition.Parent = character
-
-            local bodyGyro = Instance.new("BodyGyro")
-            bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-            bodyGyro.CFrame = character.CFrame
-            bodyGyro.Parent = character
-            return bodyPosition, bodyGyro
-        else
-            warn("Nape not found.")
-            return nil, nil
-        end
-    end
-end
-
--- دالة لإزالة BodyPosition و BodyGyro
-local function cleanupTeleport(bodyPos, bodyGyro)
-    if bodyPos then bodyPos:Destroy() end
-    if bodyGyro then bodyGyro:Destroy() end
-end
-
--- دالة للانتقال السريع إلى Nape
-local function quickTeleport()
-    local character = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if character then
-        local startPos = character.Position
-        local function setPosition(pos)
-            character.CFrame = CFrame.new(pos)
-        end
-        local function teleportSequence()
-            findClosestNape()
-            if napeLocation then
-                local napePos = napeLocation.Position
-                local step = (napePos - startPos) / 4
-                local offset = step * 3
-                for i = 1, 2 do
-                    setPosition(startPos + offset)
-                    wait(0.001)
-                    setPosition(napePos)
-                    setPosition(napePos)
-                    setPosition(napePos)
-                    setPosition(napePos)
-                end
-            end
-        end
-        teleportSequence()
-    end
-end
-
--- دالة لتبديل وضع Titan Farmer
-local function toggleTitanFarmer()
+-- تشغيل Titan Farmer
+tpButtonF.MouseButton1Click:Connect(function()
     titanFarmerEnabled = not titanFarmerEnabled
     if titanFarmerEnabled then
-        print("Teleportation Enabled")
-        findClosestNape()
-        local bodyPos, bodyGyro = teleportToNape()
-        spawn(function()
-            while titanFarmerEnabled do
-                wait(1)
-                findClosestNape()
-                if bodyPos and bodyGyro and napeLocation then
-                    bodyPos.Position = napeLocation.Position + Vector3.new(0, 300, 0)
-                    bodyGyro.CFrame = player.Character.HumanoidRootPart.CFrame
-                end
+        tpButtonF.Text = "Stop Titan Farmer"
+        while titanFarmerEnabled do
+            closestNape = findClosestNape()
+            if closestNape then
+                player.Character:WaitForChild("HumanoidRootPart").CFrame = closestNape.HumanoidRootPart.CFrame
             end
-            cleanupTeleport(bodyPos, bodyGyro)
-        end)
+            wait(1)
+        end
     else
-        print("Teleportation Disabled")
-    end
-end
-
-tpButtonF.MouseButton1Click:Connect(function()
-    toggleTitanFarmer()
-    tpButtonF.BackgroundColor3 = titanFarmerEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and titanFarmerEnabled then
-        quickTeleport()
+        tpButtonF.Text = "Start Titan Farmer"
     end
 end)
 
--- نظام Titan ESP
-local highlightsList = {}
-local espActive = false
-
-local function createHighlight(model, color, transparency)
-    if not model:FindFirstChildOfClass("Highlight") then
-        local highlight = Instance.new("Highlight")
-        highlight.Adornee = model
-        highlight.FillTransparency = transparency or 0.5
-        highlight.FillColor = color or Color3.new(1, 1, 1)
-        highlight.OutlineTransparency = transparency or 0
-        highlight.OutlineColor = color or Color3.new(1, 1, 1)
-        highlight.Enabled = espActive
-        highlight.Parent = model
-        table.insert(highlightsList, highlight)
-        print("Highlight created for model: " .. model.Name)
-    else
-        print("Highlight already exists for model: " .. model.Name)
-    end
-end
-
-local function highlightTitanParts(model)
-    local parts = {"LowerTorso", "LeftUpperArm", "RightUpperLeg", "LeftLowerLeg", "LeftUpperLeg", "RightLowerLeg", "LeftFoot", "RightLowerArm", "UpperTorso", "LeftLowerArm", "RightUpperArm", "LeftHand", "RightFoot", "RightHand", "Head"}
-    for _, partName in ipairs(parts) do
-        local part = model:FindFirstChild(partName)
-        if part and part:IsA("BasePart") then
-            createHighlight(part.Parent, Color3.new(1, 1, 1), 0.65)
-        else
-            print("Part not found or not a BasePart: " .. partName)
-        end
-    end
-end
-
-local function applyESP()
-    local titansFolder = Workspace:FindFirstChild("Titans")
-    if titansFolder then
-        for _, titan in ipairs(titansFolder:GetChildren()) do
-            if titan:IsA("Model") and titan:FindFirstChildOfClass("Humanoid") then
-                local fakeModel = titan:FindFirstChild("Fake")
-                if fakeModel then
-                    print("Highlighting model: " .. titan.Name)
-                    highlightTitanParts(fakeModel)
-                else
-                    print("No Fake model found in: " .. titan.Name)
-                end
-            else
-                print("No Humanoid found in: " .. titan.Name)
-            end
-        end
-    else
-        warn("Titans folder not found in Workspace.")
-    end
-end
-
-local function toggleESP(active)
-    espActive = active
-    for _, highlight in ipairs(highlightsList) do
-        if highlight:IsA("Highlight") then
-            highlight.Enabled = espActive
-        end
-    end
-    tpButtonE.BackgroundColor3 = espActive and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
-    if not espActive then
-        for _, highlight in ipairs(highlightsList) do
-            highlight:Destroy()
-        end
-        highlightsList = {}
-    else
-        applyESP()
-    end
-end
-
+-- تشغيل Titan ESP
 tpButtonE.MouseButton1Click:Connect(function()
-    toggleESP(not espActive)
-end)
-
-applyESP()
-
--- دالة للحصول على موقع Nape الثاني
-local function findSecondClosestNape()
-    local titansFolder = Workspace:FindFirstChild("Titans")
-    local closestNapeCFrame = nil
-    local minDistance = math.huge
-    if titansFolder then
-        local playerPos = getPlayerPosition()
-        for _, titan in ipairs(titansFolder:GetChildren()) do
-            if titan:IsA("Model") and titan:FindFirstChildOfClass("Humanoid") then
-                local hitboxes = titan:FindFirstChild("Hitboxes")
-                if hitboxes then
-                    local hit = hitboxes:FindFirstChild("Hit")
-                    if hit then
-                        local nape = hit:FindFirstChild("Nape")
-                        if nape then
-                            local distance = (nape.Position - playerPos).Magnitude
-                            if distance < minDistance and distance <= maxTeleportDistance then
-                                minDistance = distance
-                                closestNapeCFrame = nape.CFrame
-                            end
-                        end
+    espEnabled = not espEnabled
+    if espEnabled then
+        tpButtonE.Text = "Stop Titan ESP"
+        while espEnabled do
+            for _, nape in pairs(Workspace.Nape:GetChildren()) do
+                if nape:IsA("Model") and nape:FindFirstChild("HumanoidRootPart") then
+                    local dist = (getPlayerPosition() - nape.HumanoidRootPart.Position).Magnitude
+                    if dist < titanEspDistance then
+                        titanEspDistance = dist
+                        highlights[nape] = true
                     end
                 end
             end
+            wait(1)
         end
     else
-        warn("Titans folder not found in Workspace.")
-    end
-    if closestNapeCFrame then
-        closestNape = closestNapeCFrame
-        print("Closest NapeLocation2 set to:", closestNape)
-    else
-        warn("No Nape part found within maximum teleport distance.")
-    end
-    return closestNape
-end
-
--- دالة لتبديل التنقل إلى Nape
-local function toggleNapeTeleport()
-    teleportEnabled = not teleportEnabled
-    local status = teleportEnabled and "Teleport Enabled (Bypass status is unknown)" or "Teleport Disabled (Bypass status is unknown)"
-    print("Nape Teleportation Toggled: " .. status)
-    return status
-end
-
--- دالة للتنقل إلى Nape مع سرعة
-local function napeTeleport()
-    if teleportEnabled then
-        findSecondClosestNape()
-        local character = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-        if character and closestNape then
-            local originalCFrame = character.CFrame
-            character.CFrame = closestNape
-            delay(0.01, function()
-                character.Velocity = Vector3.new(300, 10, 0)
-            end)
-            delay(0.35, function()
-                character.CFrame = originalCFrame
-                closestNape = nil
-                print("NapeLocation reset to nil")
-            end)
-        end
-    end
-end
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 and teleportEnabled then
-        napeTeleport()
+        tpButtonE.Text = "Start Titan ESP"
+        highlights = {}
     end
 end)
 
-tpButton.MouseButton1Click:Connect(function()
-    local status = toggleNapeTeleport()
-    tpButton.BackgroundColor3 = teleportEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
-end)
+-- حفظ الإعدادات تلقائيًا
+local playerData = player:WaitForChild("PlayerData")
+local settings = playerData:FindFirstChild("Settings") or Instance.new("Folder")
+settings.Name = "Settings"
+settings.Parent = playerData
 
--- التنقل إلى GasTank للتعبئة
-local gasTank = game.Workspace.Unclimbable.Reloads.GasTanks:FindFirstChild("GasTank"):FindFirstChild("GasTank")
-local function teleportToRefill()
-    local character = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if gasTank and character then
-        local tankCFrame = gasTank.CFrame
-        character.CFrame = tankCFrame + Vector3.new(0, 25, 0)
-    end
+-- حفظ حالة Titan Farmer و Titan ESP
+local function saveSettings()
+    local titanFarmerValue = Instance.new("BoolValue")
+    titanFarmerValue.Name = "TitanFarmerEnabled"
+    titanFarmerValue.Value = titanFarmerEnabled
+    titanFarmerValue.Parent = settings
+
+    local espValue = Instance.new("BoolValue")
+    espValue.Name = "EspEnabled"
+    espValue.Value = espEnabled
+    espValue.Parent = settings
 end
 
-refillButton.MouseButton1Click:Connect(teleportToRefill)
-
--- إخفاء/إظهار الواجهة باستخدام RightShift
-local function toggleFrameVisibility()
-    if frame.Visible then
-        frame.Visible = false
-        wait(0.35)
-    else
-        frame.Visible = true
-        wait(0.35)
-    end
-end
+-- الضغط الدائم على زر الماوس
+local mouseDown = false
 
 UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.RightShift then
-        toggleFrameVisibility()
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        mouseDown = true
+        -- اضغط على زر الماوس الأيسر بشكل مستمر
+        while mouseDown do
+            -- إضافة الأكواد المطلوبة عند الضغط المستمر
+            wait(0.1)
+        end
     end
 end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        mouseDown = false
+    end
+end)
+
+-- دمج السكربتين
+local workspace = game:GetService("Workspace")
+
+local function findNape(hitFolder)
+    return hitFolder:FindFirstChild("Nape")
+end
+
+local function expandNapeHitbox(hitFolder)
+    local napeObject = findNape(hitFolder)
+    if napeObject then
+        napeObject.Size = Vector3.new(105, 120, 100)
+        napeObject.Transparency = 0.96
+        napeObject.Color = Color3.new(1, 1, 1)
+        napeObject.Material = Enum.Material.Neon
+        napeObject.CanCollide = false
+        napeObject.Anchored = false
+    end
+end
+
+local function processTitans(titansBasePart)
+    for _, titan in ipairs(titansBasePart:GetChildren()) do
+        local hitboxesFolder = titan:FindFirstChild("Hitboxes")
+        if hitboxesFolder then
+            local hitFolder = hitboxesFolder:FindFirstChild("Hit")
+            if hitFolder then
+                expandNapeHitbox(hitFolder)
+            end
+        end
+    end
+end
+
+print("Nape Expander Loaded")
+
+local titansBasePart = workspace:FindFirstChild("Titans")
+if titansBasePart then
+    processTitans(titansBasePart)
+end
