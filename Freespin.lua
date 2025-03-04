@@ -3,7 +3,7 @@ local LocalPlayer = Players.LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- التحقق من اللعبة
-local NINJA_TIME_PLACE_ID = 15503329556 -- يمكنك تحديث هذا الرقم إذا تغير
+local NINJA_TIME_PLACE_ID = 8075399143 -- الـ Place ID الجديد لـ Ninja Time
 if game.PlaceId ~= NINJA_TIME_PLACE_ID then
     warn("This script is only for Ninja Time! Current PlaceId: " .. game.PlaceId)
     return
