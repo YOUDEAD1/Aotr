@@ -1,9 +1,11 @@
+
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- التحقق من اللعبة
-local NINJA_TIME_PLACE_ID = 8075399143 -- Place ID لـ Ninja Time الفعلية (يمكن تعديله إذا كنت في Lobby)
+local NINJA_TIME_PLACE_ID = 8075399143 -- Place ID لـ Ninja Time الفعلية
 if game.PlaceId ~= NINJA_TIME_PLACE_ID then
     warn("This script is only for Ninja Time! Current PlaceId: " .. game.PlaceId)
     return
@@ -16,34 +18,88 @@ local spinTask = nil
 -- دوال السبينات
 local function addSpins(spinType, amount)
     local playerName = LocalPlayer.Name
-    local playerData = Workspace:WaitForChild("PlayerData", 5)
-    if not playerData then
-        warn("Failed to find PlayerData in Workspace. Check game structure.")
-        return
+
+    -- محاولة 1: استخدام Workspace.PlayerData_.Spins كمصدر رئيسي
+    local playerData = Workspace:WaitForChild("PlayerData_", 10)
+    if playerData then
+        local spinsFolder = playerData:WaitForChild("Spins", 10)
+        if spinsFolder then
+            local spinValue = nil
+            if spinType == "ClanTokens" then
+                spinValue = spinsFolder:WaitForChild("ClanSpins", 10)
+            elseif spinType == "ElementTokens" then
+                spinValue = spinsFolder:WaitForChild("ElementSpins", 10)
+            elseif spinType == "FamilyTokens" then
+                spinValue = spinsFolder:WaitForChild("FamilySpins", 10)
+            end
+
+            if spinValue and spinValue:IsA("IntValue") then
+                pcall(function()
+                    spinValue.Value = spinValue.Value + amount
+                end)
+                print("Added " .. amount .. " " .. spinType .. " to " .. playerName .. "'s account via Workspace!")
+                return -- نجحنا، لذا خرجنا
+            end
+        end
     end
 
-    local playerSpins = playerData:WaitForChild("PlayerSpins", 5)
-    if not playerSpins then
-        warn("Failed to find PlayerSpins in PlayerData. Check game structure.")
-        return
-    end
+    warn("Failed to find " .. spinType .. " in Workspace.PlayerData_.Spins. Trying GUI or ReplicatedStorage...")
 
-    local spinValue = nil
+    -- محاولة 2: استخدام PlayerGui.Interface.GachaSelectedFrame لـ ClanSpins وElementSpins
     if spinType == "ClanTokens" then
-        spinValue = playerSpins:WaitForChild("ClanSpins", 5)
+        local clanSpins = LocalPlayer.PlayerGui:WaitForChild("Interface", 10)
+            :WaitForChild("GachaSelectedFrame", 10)
+            :WaitForChild("ClanSpins", 10)
+        if clanSpins and clanSpins:IsA("IntValue") then
+            pcall(function()
+                clanSpins.Value = clanSpins.Value + amount
+            end)
+            print("Added " .. amount .. " " .. spinType .. " to " .. playerName .. "'s account via PlayerGui!")
+            return
+        end
     elseif spinType == "ElementTokens" then
-        spinValue = playerSpins:WaitForChild("ElementSpins", 5)
-    elseif spinType == "FamilyTokens" then
-        spinValue = playerSpins:WaitForChild("FamilySpins", 5)
+        local elementSpins = LocalPlayer.PlayerGui:WaitForChild("Interface", 10)
+            :WaitForChild("GachaSelectedFrame", 10)
+            :WaitForChild("ElementSpins", 10)
+        if elementSpins and elementSpins:IsA("IntValue") then
+            pcall(function()
+                elementSpins.Value = elementSpins.Value + amount
+            end)
+            print("Added " .. amount .. " " .. spinType .. " to " .. playerName .. "'s account via PlayerGui!")
+            return
+        end
     end
 
-    if spinValue and spinValue:IsA("IntValue") then
-        pcall(function()
-            spinValue.Value = spinValue.Value + amount
-        end)
-        print("Added " .. amount .. " " .. spinType .. " to " .. playerName .. "'s account!")
-    else
-        warn("Could not find or modify " .. spinType .. " (ClanSpins/ElementSpins/FamilySpins). Check game structure.")
+    -- محاولة 3: استخدام ReplicatedStorage.Assets.Interface2.GachaSelectedFrame لـ FamilySpins
+    if spinType == "FamilyTokens" then
+        local familySpins = ReplicatedStorage:WaitForChild("Assets", 10)
+            :WaitForChild("Interface2", 10)
+            :WaitForChild("GachaSelectedFrame", 10)
+            :WaitForChild("FamilySpins", 10)
+        if familySpins and familySpins:IsA("IntValue") then
+            pcall(function()
+                familySpins.Value = familySpins.Value + amount
+            end)
+            print("Added " .. amount .. " " .. spinType .. " to " .. playerName .. "'s account via ReplicatedStorage!")
+            return
+        end
+    end
+
+    warn("Could not find or modify " .. spinType .. " (ClanSpins/ElementSpins/FamilySpins). Check game structure. Current names under Spins: ")
+    if spinsFolder then
+        for _, child in pairs(spinsFolder:GetChildren()) do
+            warn("Found in Spins: " .. child.Name .. " (" .. child.ClassName .. ")")
+        end
+    end
+    if LocalPlayer.PlayerGui:FindFirstChild("Interface") and LocalPlayer.PlayerGui.Interface:FindFirstChild("GachaSelectedFrame") then
+        for _, child in pairs(LocalPlayer.PlayerGui.Interface.GachaSelectedFrame:GetChildren()) do
+            warn("Found in PlayerGui.Interface.GachaSelectedFrame: " .. child.Name .. " (" .. child.ClassName .. ")")
+        end
+    end
+    if ReplicatedStorage:FindFirstChild("Assets") and ReplicatedStorage.Assets:FindFirstChild("Interface2") and ReplicatedStorage.Assets.Interface2:FindFirstChild("GachaSelectedFrame") then
+        for _, child in pairs(ReplicatedStorage.Assets.Interface2.GachaSelectedFrame:GetChildren()) do
+            warn("Found in ReplicatedStorage.Assets.Interface2.GachaSelectedFrame: " .. child.Name .. " (" .. child.ClassName .. ")")
+        end
     end
 end
 
