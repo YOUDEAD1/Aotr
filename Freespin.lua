@@ -1,119 +1,106 @@
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local MarketplaceService = game:GetService("MarketplaceService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local workspace = game:GetService("Workspace")
+local Workspace = game:GetService("Workspace")
 
 -- التحقق من اللعبة
-local placeId = game.PlaceId
-print("Place ID: " .. tostring(placeId))
-
--- محاولة الحصول على اسم اللعبة
-local success, gameInfo = pcall(function()
-    return MarketplaceService:GetProductInfo(placeId, Enum.InfoType.Asset)
-end)
-if success then
-    print("Game Name: " .. (gameInfo and gameInfo.Name or "Unknown"))
-else
-    print("Game Name: Could not fetch (Error: " .. tostring(gameInfo) .. ")")
+local NINJA_TIME_PLACE_ID = 8075399143 -- Place ID لـ Ninja Time الفعلية (يمكن تعديله إذا كنت في Lobby)
+if game.PlaceId ~= NINJA_TIME_PLACE_ID then
+    warn("This script is only for Ninja Time! Current PlaceId: " .. game.PlaceId)
+    return
 end
 
--- معلومات اللاعب
-local playerName = LocalPlayer.Name
-local playerUserId = LocalPlayer.UserId
-print("Player Name: " .. playerName)
-print("Player User ID: " .. tostring(playerUserId))
+-- متغيرات التحكم
+local isRunning = false
+local spinTask = nil
 
--- محاولة الحصول على موقع اللاعب
-local playerCharacter = nil
-local playerPosition = "No character or HumanoidRootPart found"
-local success, character = pcall(function()
-    return LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait(5) -- زيادة الانتظار إلى 5 ثوانٍ
-end)
-if success and character then
-    local humanoidRootPaths = {"HumanoidRootPart", "Torso", "RootPart"} -- مسارات بديلة
-    local foundHumanoidRoot = nil
-    for _, path in pairs(humanoidRootPaths) do
-        local success, humanoidRoot = pcall(function()
-            return character:FindFirstChild(path)
+-- دوال السبينات
+local function addSpins(spinType, amount)
+    local playerName = LocalPlayer.Name
+    local playerData = Workspace:WaitForChild("PlayerData", 5)
+    if not playerData then
+        warn("Failed to find PlayerData in Workspace. Check game structure.")
+        return
+    end
+
+    local playerSpins = playerData:WaitForChild("PlayerSpins", 5)
+    if not playerSpins then
+        warn("Failed to find PlayerSpins in PlayerData. Check game structure.")
+        return
+    end
+
+    local spinValue = nil
+    if spinType == "ClanTokens" then
+        spinValue = playerSpins:WaitForChild("ClanSpins", 5)
+    elseif spinType == "ElementTokens" then
+        spinValue = playerSpins:WaitForChild("ElementSpins", 5)
+    elseif spinType == "FamilyTokens" then
+        spinValue = playerSpins:WaitForChild("FamilySpins", 5)
+    end
+
+    if spinValue and spinValue:IsA("IntValue") then
+        pcall(function()
+            spinValue.Value = spinValue.Value + amount
         end)
-        if success and humanoidRoot then
-            foundHumanoidRoot = humanoidRoot
-            break
-        end
-    end
-    if foundHumanoidRoot then
-        playerPosition = tostring(foundHumanoidRoot.Position)
-    end
-    playerCharacter = character
-end
-print("Player Position: " .. playerPosition)
-
--- محاولة الحصول على بيانات اللاعب (PlayerData) مع مسارات بديلة
-local playerData = nil
-local playerDataPaths = {"PlayerData", "Stats.PlayerData", "Data.PlayerData", "Values.PlayerData"}
-for _, path in pairs(playerDataPaths) do
-    local success, data = pcall(function()
-        local parts = path:split(".")
-        local current = LocalPlayer
-        for _, part in pairs(parts) do
-            current = current:WaitForChild(part, 5) or current:FindFirstChild(part)
-            if not current then return nil end
-        end
-        return current
-    end)
-    if success and data then
-        playerData = data
-        break
-    end
-end
-print("Player Data Found: " .. (playerData and "Yes" or "No"))
-if playerData then
-    for _, child in pairs(playerData:GetChildren()) do
-        print("Player Data - " .. child.Name .. ": " .. tostring(child.Value))
+        print("Added " .. amount .. " " .. spinType .. " to " .. playerName .. "'s account!")
+    else
+        warn("Could not find or modify " .. spinType .. " (ClanSpins/ElementSpins/FamilySpins). Check game structure.")
     end
 end
 
--- محاولة الحصول على SpinSystem مع مسارات بديلة
-local spinSystem = nil
-local spinSystemPaths = {"SpinSystem", "Events.SpinSystem", "Systems.SpinSystem", "Remote.SpinSystem"}
-for _, path in pairs(spinSystemPaths) do
-    local success, system = pcall(function()
-        local parts = path:split(".")
-        local current = ReplicatedStorage
-        for _, part in pairs(parts) do
-            current = current:WaitForChild(part, 5) or current:FindFirstChild(part)
-            if not current then return nil end
-        end
-        return current
-    end)
-    if success and system then
-        spinSystem = system
-        break
-    end
-end
-print("SpinSystem Found: " .. (spinSystem and "Yes" or "No"))
-if spinSystem then
-    for _, child in pairs(spinSystem:GetChildren()) do
-        print("SpinSystem - " .. child.Name .. ": " .. tostring(child.ClassName))
+-- وظيفة إضافة السبينات تلقائيًا
+local function autoAddSpins()
+    while isRunning do
+        addSpins("ClanTokens", 10) -- إضافة 10 سبينات للكلان
+        addSpins("ElementTokens", 10) -- إضافة 10 سبينات للعنصر
+        addSpins("FamilyTokens", 10) -- إضافة 10 سبينات للعائلة
+        task.wait(5) -- انتظار 5 ثواني بين كل عملية
     end
 end
 
--- محاولة الحصول على الكاميرا
-local camera = nil
-local success, cam = pcall(function()
-    return workspace:WaitForChild("CurrentCamera", 5)
+-- إنشاء واجهة بسيطة
+local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 200, 0, 100)
+MainFrame.Position = UDim2.new(0.5, -100, 0.5, -50)
+MainFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+MainFrame.BackgroundTransparency = 0.5
+MainFrame.ZIndex = 2
+
+local ToggleButton = Instance.new("TextButton", MainFrame)
+ToggleButton.Size = UDim2.new(1, 0, 1, 0)
+ToggleButton.BackgroundColor3 = Color3.new(0, 1, 0)
+ToggleButton.Text = "Toggle Auto Spins (Off)"
+ToggleButton.TextColor3 = Color3.new(1, 1, 1)
+ToggleButton.TextScaled = true
+ToggleButton.ZIndex = 3
+
+ToggleButton.MouseButton1Click:Connect(function()
+    isRunning = not isRunning
+    if isRunning then
+        if not spinTask then
+            spinTask = task.spawn(autoAddSpins)
+        end
+        ToggleButton.Text = "Toggle Auto Spins (On)"
+        ToggleButton.BackgroundColor3 = Color3.new(1, 0, 0)
+        print("Auto Spins Started!")
+    else
+        if spinTask then
+            task.cancel(spinTask)
+            spinTask = nil
+        end
+        ToggleButton.Text = "Toggle Auto Spins (Off)"
+        ToggleButton.BackgroundColor3 = Color3.new(0, 1, 0)
+        print("Auto Spins Stopped!")
+    end
 end)
-if success and cam then
-    camera = cam
-    print("Camera Found: Yes")
-    print("Camera Position: " .. tostring(camera.CFrame.Position))
-else
-    print("Camera Found: No")
-end
 
--- عدد اللاعبين في اللعبة
-local playerCount = #Players:GetPlayers()
-print("Total Players in Game: " .. tostring(playerCount))
+-- إيقاف السكربت إذا خرج اللاعب
+LocalPlayer.CharacterRemoving:Connect(function()
+    if isRunning and spinTask then
+        task.cancel(spinTask)
+        isRunning = false
+        print("Script stopped due to character removal.")
+    end
+end)
 
-print("=== End of Detailed Information ===")
+print("Ninja Time Auto Spins Script Loaded with Simple UI!")
