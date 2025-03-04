@@ -2,11 +2,12 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local MarketplaceService = game:GetService("MarketplaceService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local workspace = game:GetService("Workspace")
 
 -- التحقق من اللعبة
 local placeId = game.PlaceId
 local success, gameInfo = pcall(function()
-    return MarketplaceService:GetProductInfo(placeId)
+    return MarketplaceService:GetProductInfo(placeId, Enum.InfoType.Asset)
 end)
 
 -- معلومات اللاعب
@@ -30,21 +31,52 @@ end
 
 -- محاولة الحصول على بيانات اللاعب (PlayerData) مع توقيت محدود
 local playerData = nil
-local success, data = pcall(function()
-    return LocalPlayer:FindFirstChild("PlayerData") or LocalPlayer:WaitForChild("PlayerData", 5)
-end)
-if success and data then
-    playerData = data
+local playerDataPaths = {"PlayerData", "Stats.PlayerData", "Data.PlayerData"}
+for _, path in pairs(playerDataPaths) do
+    local success, data = pcall(function()
+        local parts = path:split(".")
+        local current = LocalPlayer
+        for _, part in pairs(parts) do
+            current = current:WaitForChild(part, 2) or current:FindFirstChild(part)
+            if not current then return nil end
+        end
+        return current
+    end)
+    if success and data then
+        playerData = data
+        break
+    end
 end
 
 -- محاولة الحصول على SpinSystem مع توقيت محدود
 local spinSystem = nil
-local success, system = pcall(function()
-    return ReplicatedStorage:WaitForChild("SpinSystem", 5)
-end)
-if success and system then
-    spinSystem = system
+local spinSystemPaths = {"SpinSystem", "Events.SpinSystem", "Systems.SpinSystem"}
+for _, path in pairs(spinSystemPaths) do
+    local success, system = pcall(function()
+        local parts = path:split(".")
+        local current = ReplicatedStorage
+        for _, part in pairs(parts) do
+            current = current:WaitForChild(part, 2) or current:FindFirstChild(part)
+            if not current then return nil end
+        end
+        return current
+    end)
+    if success and system then
+        spinSystem = system
+        break
+    end
 end
+
+-- محاولة الحصول على الكاميرا واللاعبين
+local camera = nil
+local success, cam = pcall(function()
+    return workspace:WaitForChild("CurrentCamera", 2)
+end)
+if success and cam then
+    camera = cam
+end
+
+local playerCount = #Players:GetPlayers()
 
 -- طباعة المعلومات
 print("=== Game and Player Information ===")
@@ -69,4 +101,9 @@ if spinSystem then
         print("SpinSystem - " .. child.Name .. ": " .. tostring(child.ClassName))
     end
 end
+print("Camera Found: " .. (camera and "Yes" or "No"))
+if camera then
+    print("Camera Position: " .. tostring(camera.CFrame.Position))
+end
+print("Total Players in Game: " .. tostring(playerCount))
 print("==================================")
