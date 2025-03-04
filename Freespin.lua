@@ -21,13 +21,20 @@ local function addSpins(spinType, amount)
     if not success or not playerData then
         warn("Failed to find PlayerData. Trying RemoteEvent...")
         local success, remote = pcall(function()
-            return ReplicatedStorage:WaitForChild("SpinSystem"):WaitForChild("AddSpins", 5)
+            return ReplicatedStorage:WaitForChild("SpinSystem", 5) -- انتظار 5 ثوانٍ فقط
         end)
         if success and remote then
-            pcall(function() remote:FireServer(spinType, amount) end)
-            print("Requested " .. amount .. " " .. spinType .. " via RemoteEvent!")
+            local success, addSpinsRemote = pcall(function()
+                return remote:WaitForChild("AddSpins", 5)
+            end)
+            if success and addSpinsRemote then
+                pcall(function() addSpinsRemote:FireServer(spinType, amount) end)
+                print("Requested " .. amount .. " " .. spinType .. " via RemoteEvent!")
+            else
+                warn("Could not find AddSpins in SpinSystem. Check game structure.")
+            end
         else
-            warn("Could not find SpinSystem or AddSpins. Check game structure.")
+            warn("Could not find SpinSystem. Check game structure.")
         end
         return
     end
