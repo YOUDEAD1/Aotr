@@ -1,4 +1,4 @@
--- تحميل مكتبة Solara UI (يجب أن تكون موجودة في اللعبة أو محمّلة مسبقًا)
+-- تحميل مكتبة Solara UI (Solara Executor يدعمها بشكل مباشر)
 local Solara = loadstring(game:HttpGet("https://raw.githubusercontent.com/3xternal/Solara/main/source.lua"))()
 
 local Players = game:GetService("Players")
@@ -17,19 +17,31 @@ local spinTask = nil
 
 -- دوال السبينات
 local function addSpins(spinType, amount)
-    local playerData = LocalPlayer:FindFirstChild("PlayerData") or LocalPlayer:WaitForChild("PlayerData")
-    if playerData then
-        local spins = playerData:FindFirstChild(spinType) -- ClanTokens, FamilyTokens, ElementTokens
-        if spins and spins:IsA("IntValue") then
-            spins.Value = spins.Value + amount
-            print("Added " .. amount .. " " .. spinType .. " to your account!")
+    local success, playerData = pcall(function()
+        return LocalPlayer:FindFirstChild("PlayerData") or LocalPlayer:WaitForChild("PlayerData", 5)
+    end)
+    if not success or not playerData then
+        warn("Failed to find PlayerData. Trying RemoteEvent...")
+        local success, remote = pcall(function()
+            return ReplicatedStorage:WaitForChild("SpinSystem"):WaitForChild("AddSpins")
+        end)
+        if success and remote then
+            pcall(function() remote:FireServer(spinType, amount) end)
+            print("Requested " .. amount .. " " .. spinType .. " via RemoteEvent!")
         else
-            local remote = ReplicatedStorage:WaitForChild("SpinSystem"):WaitForChild("AddSpins")
-            if remote then
-                remote:FireServer(spinType, amount)
-                print("Requested " .. amount .. " " .. spinType .. " via RemoteEvent!")
-            end
+            warn("Could not find SpinSystem or AddSpins. Check game structure.")
         end
+        return
+    end
+
+    local success, spins = pcall(function()
+        return playerData:FindFirstChild(spinType) -- ClanTokens, FamilyTokens, ElementTokens
+    end)
+    if success and spins and spins:IsA("IntValue") then
+        pcall(function() spins.Value = spins.Value + amount end)
+        print("Added " .. amount .. " " .. spinType .. " to your account!")
+    else
+        warn("Could not find or modify " .. spinType .. ". Check game structure.")
     end
 end
 
@@ -39,7 +51,7 @@ local function autoAddSpins()
         addSpins("ClanTokens", 10) -- إضافة 10 سبينات للكلان
         addSpins("FamilyTokens", 10) -- إضافة 10 سبينات للعائلة
         addSpins("ElementTokens", 10) -- إضافة 10 سبينات للعنصر
-        task.wait(5) -- انتظار 5 ثواني بين كل عملية لتجنب الكشف
+        task.wait(5) -- انتظار 5 ثواني بين كل عملية
     end
 end
 
@@ -90,4 +102,4 @@ Window:OnClose(function()
     end
 end)
 
-print("Ninja Time Auto Spins Script Loaded with Solara UI!")
+print("Ninja Time Auto Spins Script Loaded with Solara UI for Solara Executor!")
