@@ -1,13 +1,11 @@
--- تحميل مكتبة Solara UI (Solara Executor يدعمها بشكل مباشر)
-local Solara = loadstring(game:HttpGet("https://raw.githubusercontent.com/3xternal/Solara/main/source.lua"))()
-
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- التحقق من اللعبة
-if game.PlaceId ~= 15503329556 then -- تأكد من أنك في Ninja Time
-    warn("This script is only for Ninja Time!")
+local NINJA_TIME_PLACE_ID = 15503329556 -- يمكنك تحديث هذا الرقم إذا تغير
+if game.PlaceId ~= NINJA_TIME_PLACE_ID then
+    warn("This script is only for Ninja Time! Current PlaceId: " .. game.PlaceId)
     return
 end
 
@@ -23,7 +21,7 @@ local function addSpins(spinType, amount)
     if not success or not playerData then
         warn("Failed to find PlayerData. Trying RemoteEvent...")
         local success, remote = pcall(function()
-            return ReplicatedStorage:WaitForChild("SpinSystem"):WaitForChild("AddSpins")
+            return ReplicatedStorage:WaitForChild("SpinSystem"):WaitForChild("AddSpins", 5)
         end)
         if success and remote then
             pcall(function() remote:FireServer(spinType, amount) end)
@@ -55,34 +53,42 @@ local function autoAddSpins()
     end
 end
 
--- إنشاء الواجهة باستخدام Solara
-local Window = Solara:CreateWindow({
-    Name = "Ninja Time Auto Spins",
-    Theme = "Dark",
-    Size = UDim2.new(0, 300, 0, 200),
-    Position = UDim2.new(0.5, -150, 0.5, -100)
-})
+-- إنشاء واجهة بسيطة
+local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 200, 0, 100)
+MainFrame.Position = UDim2.new(0.5, -100, 0.5, -50)
+MainFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+MainFrame.BackgroundTransparency = 0.5
+MainFrame.ZIndex = 2
 
-local MainTab = Window:NewTab("Main")
-local MainSection = MainTab:NewSection("Auto Spins")
+local ToggleButton = Instance.new("TextButton", MainFrame)
+ToggleButton.Size = UDim2.new(1, 0, 1, 0)
+ToggleButton.BackgroundColor3 = Color3.new(0, 1, 0)
+ToggleButton.Text = "Toggle Auto Spins (Off)"
+ToggleButton.TextColor3 = Color3.new(1, 1, 1)
+ToggleButton.TextScaled = true
+ToggleButton.ZIndex = 3
 
-MainSection:NewButton("Toggle Auto Spins", "Start/Stop adding spins automatically", function()
+ToggleButton.MouseButton1Click:Connect(function()
     isRunning = not isRunning
     if isRunning then
         if not spinTask then
-            spinTask = task.spawn(autoAddSpins) -- تشغيل المهمة في خلفية منفصلة
+            spinTask = task.spawn(autoAddSpins)
         end
+        ToggleButton.Text = "Toggle Auto Spins (On)"
+        ToggleButton.BackgroundColor3 = Color3.new(1, 0, 0)
         print("Auto Spins Started!")
     else
         if spinTask then
             task.cancel(spinTask)
             spinTask = nil
         end
+        ToggleButton.Text = "Toggle Auto Spins (Off)"
+        ToggleButton.BackgroundColor3 = Color3.new(0, 1, 0)
         print("Auto Spins Stopped!")
     end
 end)
-
-MainSection:NewLabel("Status: " .. (isRunning and "Running" or "Stopped"))
 
 -- إيقاف السكربت إذا خرج اللاعب
 LocalPlayer.CharacterRemoving:Connect(function()
@@ -93,13 +99,4 @@ LocalPlayer.CharacterRemoving:Connect(function()
     end
 end)
 
--- إغلاق الواجهة عند الخروج
-Window:OnClose(function()
-    if isRunning and spinTask then
-        task.cancel(spinTask)
-        isRunning = false
-        print("Script stopped due to window close.")
-    end
-end)
-
-print("Ninja Time Auto Spins Script Loaded with Solara UI for Solara Executor!")
+print("Ninja Time Auto Spins Script Loaded with Simple UI!")
