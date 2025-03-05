@@ -160,11 +160,13 @@ local NapeLocation
 local NapeLocation2
 local TeleportEnabled = false
 local TitanFarmerEnabled = false
+local AutoClickEnabled = false -- للتحكم في الضغط التلقائي
 local MaxDistance = 1250
 local MaxTeleportDistance = 5000
 local ESPEnabled = false
 local Highlights = {}
 local ExpandedHitboxes = {}
+local FloatingEnabled = false -- للتحكم في الطفو في الجو
 
 -- الحصول على السيف النشط من يد اللاعب
 local function GetActiveBlade()
@@ -201,6 +203,23 @@ local function FindNape(hitFolder)
     return hitFolder:FindFirstChild("Nape")
 end
 
+-- دالة لمحاكاة الضغط التلقائي على زر الماوس الأيسر
+local function SimulateLeftClick()
+    if TeleportEnabled or TitanFarmerEnabled then
+        QuickTeleport()
+    end
+end
+
+-- حلقة للضغط التلقائي
+local function StartAutoClick()
+    spawn(function()
+        while AutoClickEnabled do
+            SimulateLeftClick()
+            wait(0.5) -- التأخير بين كل ضغطة (0.5 ثانية)
+        end
+    end)
+end
+
 -- دالة لمحاكاة الضربة على Nape وتسجيل القتل
 local function SimulateHit(napeObject, hitter)
     -- التأكد من وجود Nape والسيف
@@ -220,33 +239,30 @@ local function SimulateHit(napeObject, hitter)
     end
 
     -- العثور على Remote Events
-    local strikeEvent = ReplicatedStorage.Assets.Hitboxes:FindFirstChild("LethalTempo")
-    local slayEvent = ReplicatedStorage.Objectives:FindFirstChild("Slay")
+    local strikeEvent = ReplicatedStorage.Assets.Hitboxes:FindFirstChild("TorrentialSteel")
+    local strikeEventFallback = ReplicatedStorage.Assets.Hitboxes:FindFirstChild("RisingSlash")
 
-    -- تسجيل الضربة باستخدام LethalTempo
+    -- تسجيل الضربة باستخدام TorrentialSteel أو RisingSlash
     if strikeEvent and strikeEvent:IsA("RemoteEvent") then
         strikeEvent:FireServer(napeObject, hitter)
-        print("Strike registered on Nape using LethalTempo.")
+        print("Strike registered on Nape using TorrentialSteel.")
+    elseif strikeEventFallback and strikeEventFallback:IsA("RemoteEvent") then
+        strikeEventFallback:FireServer(napeObject, hitter)
+        print("Strike registered on Nape using RisingSlash.")
     else
-        warn("LethalTempo RemoteEvent not found or not a RemoteEvent.")
+        warn("TorrentialSteel and RisingSlash RemoteEvents not found or not RemoteEvents.")
     end
 
-    -- تسجيل القتل باستخدام Slay
-    if slayEvent and slayEvent:IsA("RemoteEvent") then
-        slayEvent:FireServer(titan)
-        print("Kill registered for Titan using Slay.")
-    else
-        warn("Slay RemoteEvent not found or not a RemoteEvent. Applying direct damage as fallback.")
-        local humanoid = titan:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            for i = 1, 5 do
-                humanoid:TakeDamage(500)
-                wait(0.1)
-            end
-            print("Applied 2500 total damage to Titan Humanoid as fallback.")
-        else
-            warn("Could not find Humanoid to apply damage.")
+    -- تطبيق الضرر مباشرة على Humanoid الخاص بـ Titan كبديل
+    local humanoid = titan:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        for i = 1, 5 do
+            humanoid:TakeDamage(2000) -- زيادة الضرر إلى 2000 لكل ضربة (إجمالي 10000)
+            wait(0.1)
         end
+        print("Applied 10000 total damage to Titan Humanoid as fallback.")
+    else
+        warn("Could not find Humanoid to apply damage.")
     end
 end
 
@@ -360,6 +376,35 @@ local function FindClosestNape()
     return NapeLocation
 end
 
+-- دالة لتفعيل الطفو في الجو
+local function EnableFloating()
+    local Character = LocalPlayer.Character
+    local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+    if HumanoidRootPart then
+        local bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.Name = "FloatingVelocity"
+        bodyVelocity.MaxForce = Vector3.new(0, math.huge, 0)
+        bodyVelocity.Velocity = Vector3.new(0, 0, 0) -- يبقي اللاعب في الجو
+        bodyVelocity.Parent = HumanoidRootPart
+        FloatingEnabled = true
+        print("Floating enabled.")
+    end
+end
+
+-- دالة لإلغاء الطفو
+local function DisableFloating()
+    local Character = LocalPlayer.Character
+    local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+    if HumanoidRootPart then
+        local bodyVelocity = HumanoidRootPart:FindFirstChild("FloatingVelocity")
+        if bodyVelocity then
+            bodyVelocity:Destroy()
+            FloatingEnabled = false
+            print("Floating disabled.")
+        end
+    end
+end
+
 -- دالة للتنقل المستمر إلى Nape
 local function TeleportToNape()
     if NapeLocation then
@@ -371,10 +416,16 @@ local function TeleportToNape()
             local ray = Ray.new(NapePosition, Vector3.new(0, -1000, 0))
             local hitPart, hitPosition = Workspace:FindPartOnRay(ray, Character)
             if hitPosition then
-                NapePosition = hitPosition + Vector3.new(0, 5, 0) -- وضع اللاعب فوق الأرض
+                NapePosition = hitPosition + Vector3.new(0, 50, 0) -- وضع اللاعب في الجو
             end
 
             HumanoidRootPart.CFrame = CFrame.new(NapePosition)
+
+            -- تفعيل الطفو في الجو
+            if not FloatingEnabled then
+                EnableFloating()
+            end
+
             wait(0.5) -- تأخير بسيط للسماح للعبة بالتحميل
         else
             warn("HumanoidRootPart not found or player is dead.")
@@ -399,7 +450,7 @@ local function QuickTeleport()
             local ray = Ray.new(NapePosition, Vector3.new(0, -1000, 0))
             local hitPart, hitPosition = Workspace:FindPartOnRay(ray, Character)
             if hitPosition then
-                NapePosition = hitPosition + Vector3.new(0, 5, 0) -- وضع اللاعب فوق الأرض
+                NapePosition = hitPosition + Vector3.new(0, 50, 0) -- وضع اللاعب في الجو
             end
 
             local Step = (NapePosition - StartPosition) / 4
@@ -412,6 +463,12 @@ local function QuickTeleport()
                     SetPosition(NapePosition)
                 end
             end
+
+            -- تفعيل الطفو في الجو
+            if not FloatingEnabled then
+                EnableFloating()
+            end
+
             wait(0.5) -- تأخير بسيط للسماح للعبة بالتحميل
         end
     end
@@ -420,8 +477,10 @@ end
 -- دالة لتبديل التنقل المستمر
 local function ToggleTeleport()
     TeleportEnabled = not TeleportEnabled
+    AutoClickEnabled = TeleportEnabled -- تفعيل الضغط التلقائي مع التنقل
     if TeleportEnabled then
         print("Teleportation Enabled")
+        StartAutoClick() -- بدء الضغط التلقائي
         spawn(function()
             while TeleportEnabled do
                 FindClosestNape()
@@ -430,9 +489,12 @@ local function ToggleTeleport()
                 end
                 wait(1)
             end
+            -- إلغاء الطفو عند إيقاف التنقل
+            DisableFloating()
         end)
     else
         print("Teleportation Disabled")
+        DisableFloating()
     end
 end
 
@@ -441,10 +503,46 @@ TpButtonF.MouseButton1Click:Connect(function()
     TpButtonF.BackgroundColor3 = TeleportEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
 end)
 
-UserInputService.InputEnded:Connect(function(input)
-    if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and TeleportEnabled then
-        QuickTeleport()
+-- دالة لتبديل Titan Farmer مع الضغط التلقائي
+local function ToggleTitanFarmer()
+    TitanFarmerEnabled = not TitanFarmerEnabled
+    AutoClickEnabled = TitanFarmerEnabled -- تفعيل الضغط التلقائي مع Titan Farmer
+    local Status = TitanFarmerEnabled and "Teleport Enabled (Bypass status is unknown)" or "Teleport Disabled (Bypass status is unknown)"
+    print("Nape Teleportation Toggled: " .. Status)
+    if TitanFarmerEnabled then
+        StartAutoClick() -- بدء الضغط التلقائي
     end
+    return Status
+end
+
+local function TitanFarmerTeleport()
+    if TitanFarmerEnabled then
+        FindClosestNapeForFarmer()
+        local Character = LocalPlayer.Character
+        local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+        local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+        if HumanoidRootPart and Humanoid and Humanoid.Health > 0 and NapeLocation2 then
+            HumanoidRootPart.CFrame = NapeLocation2
+            delay(0.01, function()
+                HumanoidRootPart.Velocity = Vector3.new(300, 10, 0)
+            end)
+            -- لا نعيد اللاعب إلى الموقع الأصلي، بل نتركه في الجو
+            NapeLocation2 = nil
+            print("NapeLocation reset to nil")
+
+            -- تفعيل الطفو في الجو
+            if not FloatingEnabled then
+                EnableFloating()
+            end
+
+            wait(0.5) -- تأخير بسيط للسماح للعبة بالتحميل
+        end
+    end
+end
+
+TpButton.MouseButton1Click:Connect(function()
+    local Status = ToggleTitanFarmer()
+    TpButton.BackgroundColor3 = TitanFarmerEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
 end)
 
 -- دالة لإبراز Titans (ESP)
@@ -563,46 +661,6 @@ local function FindClosestNapeForFarmer()
     return NapeLocation2
 end
 
-local function ToggleTitanFarmer()
-    TitanFarmerEnabled = not TitanFarmerEnabled
-    local Status = TitanFarmerEnabled and "Teleport Enabled (Bypass status is unknown)" or "Teleport Disabled (Bypass status is unknown)"
-    print("Nape Teleportation Toggled: " .. Status)
-    return Status
-end
-
-local function TitanFarmerTeleport()
-    if TitanFarmerEnabled then
-        FindClosestNapeForFarmer()
-        local Character = LocalPlayer.Character
-        local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
-        local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
-        if HumanoidRootPart and Humanoid and Humanoid.Health > 0 and NapeLocation2 then
-            local OriginalCFrame = HumanoidRootPart.CFrame
-            HumanoidRootPart.CFrame = NapeLocation2
-            delay(0.01, function()
-                HumanoidRootPart.Velocity = Vector3.new(300, 10, 0)
-            end)
-            delay(0.35, function()
-                HumanoidRootPart.CFrame = OriginalCFrame
-                NapeLocation2 = nil
-                print("NapeLocation reset to nil")
-            end)
-            wait(0.5) -- تأخير بسيط للسماح للعبة بالتحميل
-        end
-    end
-end
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 and TitanFarmerEnabled then
-        TitanFarmerTeleport()
-    end
-end)
-
-TpButton.MouseButton1Click:Connect(function()
-    local Status = ToggleTitanFarmer()
-    TpButton.BackgroundColor3 = TitanFarmerEnabled and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
-end)
-
 -- دالة التنقل إلى GasTank
 local GasTank = Workspace:FindFirstChild("Unclimbable") and Workspace.Unclimbable:FindFirstChild("Reloads") and Workspace.Unclimbable.Reloads:FindFirstChild("GasTanks") and Workspace.Unclimbable.Reloads.GasTanks:FindFirstChild("GasTank") and Workspace.Unclimbable.Reloads.GasTanks.GasTank:FindFirstChild("GasTank")
 
@@ -615,10 +673,16 @@ local function TeleportToGasTank()
         local ray = Ray.new(GasPosition, Vector3.new(0, -1000, 0))
         local hitPart, hitPosition = Workspace:FindPartOnRay(ray, Character)
         if hitPosition then
-            GasPosition = hitPosition + Vector3.new(0, 5, 0) -- وضع اللاعب فوق الأرض
+            GasPosition = hitPosition + Vector3.new(0, 25, 0) -- وضع اللاعب في الجو
         end
 
         HumanoidRootPart.CFrame = CFrame.new(GasPosition)
+
+        -- تفعيل الطفو في الجو
+        if not FloatingEnabled then
+            EnableFloating()
+        end
+
         wait(0.5) -- تأخير بسيط للسماح للعبة بالتحميل
     else
         warn("GasTank not found or player is dead.")
