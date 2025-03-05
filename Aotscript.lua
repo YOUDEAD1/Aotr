@@ -1,435 +1,486 @@
--- سكريبت محسن لـ AOTR (مع GUI مخصص وإصلاح التحكم)
--- التاريخ: 28 فبراير 2025
+-- إعداد واجهة المستخدم
+‏local a = Instance.new("ScreenGui")
+‏local b = Instance.new("Frame")
+‏local c = Instance.new("TextLabel")
+‏local d = Instance.new("ScrollingFrame")
+‏local e = Instance.new("TextLabel")
+‏local f = Instance.new("TextLabel")
+‏local g = Instance.new("TextButton")
+‏local h = Instance.new("TextButton")
+‏local i = Instance.new("TextButton")
+‏local j = Instance.new("TextLabel")
+‏local k = Instance.new("TextButton")
+‏local l = Instance.new("BoolValue")
 
-print("AOTR Script Starting - Custom GUI Enhanced - Grok @ xAI")
+‏a.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+‏a.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-local VIM = game:GetService("VirtualInputManager")
-local workspace = game:GetService("Workspace")
-local UIS = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
+‏b.Parent = a
+‏b.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+‏b.BorderColor3 = Color3.fromRGB(0, 0, 0)
+‏b.BorderSizePixel = 0
+‏b.Position = UDim2.new(0.4164823, 0, 0.0479591824, 0)
+‏b.Size = UDim2.new(0, 340, 0, 329)
+‏b.Style = Enum.FrameStyle.RobloxRound
 
--- تحقق من اللاعب والشخصية
-local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid", 5)
-local rootPart = character:WaitForChild("HumanoidRootPart", 5)
-local camera = workspace.CurrentCamera
+‏c.Name = "Title"
+‏c.Parent = b
+‏c.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+‏c.BackgroundTransparency = 1.000
+‏c.BorderColor3 = Color3.fromRGB(0, 0, 0)
+‏c.BorderSizePixel = 0
+‏c.Position = UDim2.new(0.0207602102, 0, -0.00166114408, 0)
+‏c.Size = UDim2.new(0, 312, 0, 50)
+‏c.Font = Enum.Font.Unknown
+‏c.Text = "Tekkit AotR"
+‏c.TextColor3 = Color3.fromRGB(255, 255, 255)
+‏c.TextScaled = true
+‏c.TextSize = 1.000
+‏c.TextWrapped = true
 
-if not humanoid or not rootPart then
-    warn("Failed to find Humanoid or HumanoidRootPart.")
-    return
-end
+‏d.Parent = b
+‏d.Active = true
+‏d.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+‏d.BackgroundTransparency = 1.000
+‏d.BorderColor3 = Color3.fromRGB(0, 0, 0)
+‏d.BorderSizePixel = 0
+‏d.Position = UDim2.new(0.0415333472, 0, 0.162598208, 0)
+‏d.Size = UDim2.new(0, 305, 0, 256)
+‏d.VerticalScrollBarPosition = Enum.VerticalScrollBarPosition.Left
 
--- متغيرات التحكم
-local autoFarmEnabled = false
-local attackSpeed = 0.03
-local teleportOffset = Vector3.new(0, 5, -5)
-getgenv().autoescape = false
-getgenv().autor = false
-local napeExpanderEnabled = false
-local titanMarkersEnabled = false
-local cameraLockEnabled = false
+‏e.Name = "Teleport"
+‏e.Parent = d
+‏e.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+‏e.BackgroundTransparency = 1.000
+‏e.BorderColor3 = Color3.fromRGB(0, 0, 0)
+‏e.BorderSizePixel = 0
+‏e.Position = UDim2.new(0.0799999982, 0, 0.0299999993, 0)
+‏e.Size = UDim2.new(0, 200, 0.0599999987, 0)
+‏e.Font = Enum.Font.Fondamento
+‏e.Text = "Nape Teleport"
+‏e.TextColor3 = Color3.fromRGB(148, 148, 148)
+‏e.TextSize = 25.000
+‏e.TextWrapped = true
 
--- جدول السكربت الأول
-local encodedTable = {
-    "sb94mq1=", 8455876, "AJ54l+t=", "lw0MO3v=", 286080029, 4034956, "Wd0aXmykzv==",
-    "4uPmxi==", "U9p3hYh=", 16456370330, "d07D97H=", 13816647, 4443058285, 7426775,
-    "9/AJXd1=", "xrBbpqm=", 14, "ejp=", "tIi=", 35067303023060, "U+fNWRo=", "z2o=",
-    "6RyYUPwKU+fKTPwqL9HiX8fpWBwezBvP48IZD+yt2QwZueoaUr4PT9wtL+nazDCKXrta2B5KU+fKT1YOT94KXq0phOkN2+ktWBwKXqwYW8MyDkjlGejns6j=",
-    "PSvu/v==", "qJMWUXh=", 15948975, "9gXs3CM=", "GVx4Ii3=", 12141128, 15606895,
-    "Colossal", "Armored", "Female", "Beast", "Jaw", "Attack", "Warhammer", "Cart"
-}
+‏f.Name = "Titan Farmer"
+‏f.Parent = d
+‏f.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+‏f.BackgroundTransparency = 1.000
+‏f.BorderColor3 = Color3.fromRGB(0, 0, 0)
+‏f.BorderSizePixel = 0
+‏f.Position = UDim2.new(0.0804597735, 0, 0.104999997, 0)
+‏f.Size = UDim2.new(0, 200, 0.0599999987, 0)
+‏f.Font = Enum.Font.Unknown
+‏f.Text = "Titan Farmer"
+‏f.TextColor3 = Color3.fromRGB(148, 148, 148)
+‏f.TextSize = 20.000
+‏f.TextWrapped = true
 
-local function decodeValue(value)
-    if type(value) == "string" and value:find("=") then
-        local base64Alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-        local data = value:gsub("[^" .. base64Alphabet .. "=]", "")
-        local binaryString = data:gsub(".", function(char)
-            if char == "=" then return "" end
-            local charValue = base64Alphabet:find(char, 1, true) - 1
-            local bits = ""
-            for i = 6, 1, -1 do
-                bits = bits .. ((charValue % 2^i - charValue % 2^(i-1) > 0) and "1" or "0")
-            end
-            return bits
-        end)
-        local decoded = binaryString:gsub("%d%d%d?%d?%d?%d?%d?%d?", function(byteString)
-            if #byteString ~= 8 then return "" end
-            local byteValue = 0
-            for i = 1, 8 do
-                byteValue = byteValue + ((byteString:sub(i, i) == "1") and 2^(8 - i) or 0)
-            end
-            return string.char(byteValue)
-        end)
-        return decoded ~= "" and decoded or value
-    end
-    return value
-end
+‏g.Name = "tpButton"
+‏g.Parent = d
+‏g.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
+‏g.BorderColor3 = Color3.fromRGB(0, 0, 0)
+‏g.BorderSizePixel = 2
+‏g.Position = UDim2.new(0.699999988, 0, 0.0350000001, 0)
+‏g.Size = UDim2.new(0, 30, 0, 30)
+‏g.Font = Enum.Font.SourceSans
+‏g.Text = ""
+‏g.TextColor3 = Color3.fromRGB(0, 0, 0)
+‏g.TextSize = 14.000
 
--- دوال Nape Expander
-local function findNape(hitFolder)
-    return hitFolder:FindFirstChild("Nape")
-end
+‏h.Name = "tpButtonF"
+‏h.Parent = d
+‏h.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
+‏h.BorderColor3 = Color3.fromRGB(0, 0, 0)
+‏h.BorderSizePixel = 2
+‏h.Position = UDim2.new(0.699999928, 0, 0.10900782, 0)
+‏h.Size = UDim2.new(0, 30, 0, 30)
+‏h.Font = Enum.Font.SourceSans
+‏h.Text = ""
+‏h.TextColor3 = Color3.fromRGB(0, 0, 0)
+‏h.TextSize = 14.000
 
-local function expandNapeHitbox(hitFolder)
-    local napeObject = findNape(hitFolder)
-    if napeObject then
-        napeObject.Size = Vector3.new(105, 120, 100)
-        napeObject.Transparency = 0.96
-        napeObject.Color = Color3.new(1, 1, 1)
-        napeObject.Material = Enum.Material.Neon
-        napeObject.CanCollide = false
-        napeObject.Anchored = false
-    end
-end
+‏i.Name = "refill"
+‏i.Parent = d
+‏i.BackgroundColor3 = Color3.fromRGB(94, 94, 94)
+‏i.BackgroundTransparency = 0.800
+‏i.BorderColor3 = Color3.fromRGB(0, 0, 0)
+‏i.BorderSizePixel = 0
+‏i.Position = UDim2.new(0.230000004, 0, 0.264999986, 0)
+‏i.Size = UDim2.new(0, 100, 0, 25)
+‏i.Font = Enum.Font.Unknown
+‏i.Text = "Tp to Refill"
+‏i.TextColor3 = Color3.fromRGB(148, 148, 148)
+‏i.TextScaled = true
+‏i.TextSize = 27.000
+‏i.TextWrapped = true
 
-local function processTitans(titansBasePart)
-    for _, titan in ipairs(titansBasePart:GetChildren()) do
-        local hitboxesFolder = titan:FindFirstChild("Hitboxes")
-        if hitboxesFolder then
-            local hitFolder = hitboxesFolder:FindFirstChild("Hit")
-            if hitFolder then
-                expandNapeHitbox(hitFolder)
-            end
-        end
-    end
-end
+‏j.Name = "esp"
+‏j.Parent = d
+‏j.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+‏j.BackgroundTransparency = 1.000
+‏j.BorderColor3 = Color3.fromRGB(0, 0, 0)
+‏j.BorderSizePixel = 0
+‏j.Position = UDim2.new(0.0542302355, 0, 0.181999996, 0)
+‏j.Size = UDim2.new(0, 200, 0.0599999987, 0)
+‏j.Font = Enum.Font.Unknown
+‏j.Text = "Titan ESP"
+‏j.TextColor3 = Color3.fromRGB(148, 148, 148)
+‏j.TextSize = 23.000
+‏j.TextWrapped = true
 
--- إعداد GUI مخصص
-local screenGui = Instance.new("ScreenGui")
-screenGui.Parent = player:WaitForChild("PlayerGui")
-screenGui.Name = "AOTR_ControlPanel"
+‏k.Name = "tpButtonE"
+‏k.Parent = d
+‏k.BackgroundColor3 = Color3.fromRGB(79, 79, 79)
+‏k.BorderColor3 = Color3.fromRGB(0, 0, 0)
+‏k.BorderSizePixel = 2
+‏k.Position = UDim2.new(0.699999988, 0, 0.185000002, 0)
+‏k.Size = UDim2.new(0, 30, 0, 30)
+‏k.Font = Enum.Font.SourceSans
+‏k.Text = ""
+‏k.TextColor3 = Color3.fromRGB(0, 0, 0)
+‏k.TextSize = 14.000
 
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 300, 0, 400)
-mainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
-mainFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-mainFrame.BorderSizePixel = 0
-mainFrame.Parent = screenGui
+‏b.Draggable = true
+‏b.Selectable = true
+‏b.Active = true
 
-local titleBar = Instance.new("Frame")
-titleBar.Size = UDim2.new(1, 0, 0, 30)
-titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-titleBar.BorderSizePixel = 0
-titleBar.Parent = mainFrame
+-- الوظائف البرمجية
+‏local a = game:GetService("Players")
+‏local a = a.LocalPlayer
+‏local c = game:GetService("Workspace")
+‏local d = game:GetService("UserInputService")
+‏local e
+‏local f = false
+‏local j = 1250
+‏local l
+‏local m
+‏local m = false
+‏local n = math.huge
+‏local o = false
+‏local o = {}
 
-local titleText = Instance.new("TextLabel")
-titleText.Size = UDim2.new(0.8, 0, 1, 0)
-titleText.Position = UDim2.new(0, 10, 0, 0)
-titleText.Text = "AOTR Control Panel"
-titleText.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleText.BackgroundTransparency = 1
-titleText.Font = Enum.Font.SourceSansBold
-titleText.TextSize = 18
-titleText.Parent = titleBar
+‏local function o()
+‏    local a = a.Character or a.CharacterAdded:Wait()
+‏    local a = a:WaitForChild("HumanoidRootPart")
+‏    if a and a:IsA("BasePart") then
+‏        local a = a.Position
+‏        print("HumanoidRootPart Location:", a)
+‏        return a
+‏    else
+‏        warn("HumanoidRootPart not found for LocalPlayer.")
+‏        return nil
+‏    end
+‏end
 
-local hideButton = Instance.new("TextButton")
-hideButton.Size = UDim2.new(0, 30, 0, 30)
-hideButton.Position = UDim2.new(1, -30, 0, 0)
-hideButton.Text = "-"
-hideButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-hideButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-hideButton.Parent = titleBar
+‏local function p()
+‏    local a = c:FindFirstChild("Titans")
+‏    local b = nil
+‏    local c = math.huge
+‏    if a then
+‏        local d = o()
+‏        for a, a in ipairs(a:GetChildren()) do
+‏            if a:IsA("Model") and a:FindFirstChildOfClass("Humanoid") then
+‏                local a = a:FindFirstChild("Hitboxes")
+‏                if a then
+‏                    local a = a:FindFirstChild("Hit")
+‏                    if a then
+‏                        local a = a:FindFirstChild("Nape")
+‏                        if a then
+‏                            local d = (a.Position - d).Magnitude
+‏                            if d < c and d <= n then
+‏                                c = d
+‏                                b = a
+‏                            end
+‏                        end
+‏                    end
+‏                end
+‏            end
+‏        end
+‏    else
+‏        warn("Titans folder not found in Workspace.")
+‏    end
+‏    if b then
+‏        l = b
+‏        print("Closest NapeLocation set to:", l.Position)
+‏    else
+‏        warn("No Nape part found within maximum teleport distance.")
+‏    end
+‏    return l
+‏end
 
-local contentFrame = Instance.new("Frame")
-contentFrame.Size = UDim2.new(1, -20, 1, -40)
-contentFrame.Position = UDim2.new(0, 10, 0, 35)
-contentFrame.BackgroundTransparency = 1
-contentFrame.Parent = mainFrame
+‏local function n()
+‏    if l then
+‏        local a = a.Character and a.Character:FindFirstChild("HumanoidRootPart")
+‏        if a then
+‏            local b = Instance.new("BodyPosition")
+‏            b.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+‏            b.Position = l.Position + Vector3.new(0, 450, 0)
+‏            b.Parent = a
+‏            local c = Instance.new("BodyGyro")
+‏            c.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+‏            c.CFrame = a.CFrame
+‏            c.Parent = a
+‏            return b, c
+‏        else
+‏            warn("Nape not found.")
+‏            return nil, nil
+‏        end
+‏    end
+‏end
 
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.Padding = UDim.new(0, 10)
-UIListLayout.Parent = contentFrame
+‏local function o(a, b)
+‏    if a then a:Destroy() end
+‏    if b then b:Destroy() end
+‏end
 
--- وظيفة الإخفاء/الإظهار
-local isHidden = false
-hideButton.MouseButton1Click:Connect(function()
-    isHidden = not isHidden
-    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    if isHidden then
-        TweenService:Create(mainFrame, tweenInfo, {Position = UDim2.new(0.5, -150, 1, 0)}):Play()
-        hideButton.Text = "+"
-    else
-        TweenService:Create(mainFrame, tweenInfo, {Position = UDim2.new(0.5, -150, 0.5, -200)}):Play()
-        hideButton.Text = "-"
-    end
-end)
+‏local function q()
+‏    local a = a.Character and a.Character:FindFirstChild("HumanoidRootPart")
+‏    if a then
+‏        local b = a.Position
+‏        local function c(b)
+‏            a.CFrame = CFrame.new(b)
+‏        end
+‏        local function a()
+‏            p()
+‏            if l then
+‏                local a = l.Position
+‏                local d = (a - b) / 4
+‏                local d = d * 3
+‏                for e = 1, 2 do
+‏                    c(b + d)
+‏                    wait(0.001)
+‏                    c(a)
+‏                    c(a)
+‏                    c(a)
+‏                    c(a)
+‏                end
+‏            end
+‏        end
+‏        a()
+‏    end
+‏end
 
--- إضافة أزرار التحكم
-local function createToggleButton(text, callback)
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(1, 0, 0, 40)
-    button.Text = text .. ": OFF"
-    button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.Font = Enum.Font.SourceSans
-    button.TextSize = 18
-    button.Parent = contentFrame
-    local state = false
-    button.MouseButton1Click:Connect(function()
-        state = not state
-        button.Text = text .. (state and ": ON" or ": OFF")
-        callback(state)
-    end)
-    return button
-end
+‏local function r()
+‏    m = not m
+‏    if m then
+‏        print("Teleportation Enabled")
+‏        p()
+‏        local b, c = n()
+‏        spawn(function()
+‏            while m do
+‏                wait(1)
+‏                p()
+‏                if b and c then
+‏                    b.Position = l.Position + Vector3.new(0, 300, 0)
+‏                    c.CFrame = a.Character.HumanoidRootPart.CFrame
+‏                end
+‏            end
+‏            o(b, c)
+‏        end)
+‏    else
+‏        print("Teleportation Disabled")
+‏    end
+‏end
 
-local function createSlider(text, min, max, default, callback)
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 0, 60)
-    frame.BackgroundTransparency = 1
-    frame.Parent = contentFrame
+‏h.MouseButton1Click:Connect(function()
+‏    r()
+‏    h.BackgroundColor3 = m and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
+‏end)
 
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 0, 20)
-    label.Text = text .. ": " .. default
-    label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.Font = Enum.Font.SourceSans
-    label.TextSize = 18
-    label.Parent = frame
+‏d.InputEnded:Connect(function(a)
+‏    if (a.UserInputType == Enum.UserInputType.MouseButton1 or a.UserInputType == Enum.UserInputType.Touch) and m == true then
+‏        q()
+‏    end
+‏end)
 
-    local slider = Instance.new("TextButton")
-    slider.Size = UDim2.new(1, 0, 0, 20)
-    slider.Position = UDim2.new(0, 0, 0, 30)
-    slider.Text = ""
-    slider.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-    slider.Parent = frame
+‏local h = {}
+‏local l = false
 
-    local fill = Instance.new("Frame")
-    fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
-    fill.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
-    fill.Parent = slider
+‏local function m(a, b, c)
+‏    if not a:FindFirstChildOfClass("Highlight") then
+‏        local d = Instance.new("Highlight")
+‏        d.Adornee = a
+‏        d.FillTransparency = c or 0.5
+‏        d.FillColor = b or Color3.new(1, 1, 1)
+‏        d.OutlineTransparency = c or 0
+‏        d.OutlineColor = b or Color3.new(1, 1, 1)
+‏        d.Enabled = l
+‏        d.Parent = a
+‏        table.insert(h, d)
+‏        print("Highlight created for model: " .. a.Name)
+‏    else
+‏        print("Highlight already exists for model: " .. a.Name)
+‏    end
+‏end
 
-    slider.MouseButton1Down:Connect(function()
-        local mouseConnection
-        mouseConnection = UIS.InputChanged:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseMovement then
-                local relativeX = math.clamp((input.Position.X - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
-                fill.Size = UDim2.new(relativeX, 0, 1, 0)
-                local value = min + (relativeX * (max - min))
-                label.Text = text .. ": " .. string.format("%.2f", value)
-                callback(value)
-            end
-        end)
-        UIS.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                mouseConnection:Disconnect()
-            end
-        end)
-    end)
-end
+‏local function n(a)
+‏    local b = {"LowerTorso", "LeftUpperArm", "RightUpperLeg", "LeftLowerLeg", "LeftUpperLeg", "RightLowerLeg", "LeftFoot", "RightLowerArm", "UpperTorso", "LeftLowerArm", "RightUpperArm", "LeftHand", "RightFoot", "RightHand", "Head"}
+‏    for b, b in ipairs(b) do
+‏        local a = a:FindFirstChild(b)
+‏        if a and a:IsA("BasePart") then
+‏            m(a.Parent, Color3.new(1, 1, 1), 0.65)
+‏        else
+‏            print("Part not found or not a BasePart: " .. b)
+‏        end
+‏    end
+‏end
 
-local function createButton(text, callback)
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(1, 0, 0, 40)
-    button.Text = text
-    button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.Font = Enum.Font.SourceSans
-    button.TextSize = 18
-    button.Parent = contentFrame
-    button.MouseButton1Click:Connect(callback)
-end
+‏local function m()
+‏    local a = workspace:FindFirstChild("Titans")
+‏    if a then
+‏        for a, a in ipairs(a:GetChildren()) do
+‏            if a:IsA("Model") and a:FindFirstChildOfClass("Humanoid") then
+‏                local b = a:FindFirstChild("Fake")
+‏                if b then
+‏                    print("Highlighting model: " .. a.Name)
+‏                    n(b)
+‏                else
+‏                    print("No Fake model found in: " .. a.Name)
+‏                end
+‏            else
+‏                print("No Humanoid found in: " .. a.Name)
+‏            end
+‏        end
+‏    else
+‏        warn("Titans folder not found in Workspace.")
+‏    end
+‏end
 
--- إعداد عناصر GUI
-createToggleButton("Auto-Farm", function(state)
-    autoFarmEnabled = state
-    print("Auto-Farm " .. (state and "Enabled" or "Disabled"))
-end)
+‏local function n(a)
+‏    l = a
+‏    for a, a in ipairs(h) do
+‏        if a:IsA("Highlight") then
+‏            a.Enabled = l
+‏        end
+‏    end
+‏    k.BackgroundColor3 = l and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
+‏    if not l then
+‏        for a, a in ipairs(h) do
+‏            a:Destroy()
+‏        end
+‏        h = {}
+‏    else
+‏        m()
+‏    end
+‏end
 
-createToggleButton("Auto-Escape", function(state)
-    getgenv().autoescape = state
-    print("Auto-Escape " .. (state and "Enabled" or "Disabled"))
-end)
+‏k.MouseButton1Click:Connect(function()
+‏    n(not l)
+‏end)
 
-createToggleButton("Auto-R (Blade Reload)", function(state)
-    getgenv().autor = state
-    print("Auto-R " .. (state and "Enabled" or "Disabled"))
-end)
+‏m()
 
-createToggleButton("Nape Expander", function(state)
-    napeExpanderEnabled = state
-    print("Nape Expander " .. (state and "Enabled" or "Disabled"))
-end)
+‏local function h()
+‏    local a = a.Character or a.CharacterAdded:Wait()
+‏    local a = a:WaitForChild("HumanoidRootPart")
+‏    if a and a:IsA("BasePart") then
+‏        local a = a.Position
+‏        print("HumanoidRootPart Location:", a)
+‏        return a
+‏    else
+‏        warn("HumanoidRootPart not found for LocalPlayer.")
+‏        return nil
+‏    end
+‏end
 
-createToggleButton("Titan Markers", function(state)
-    titanMarkersEnabled = state
-    print("Titan Markers " .. (state and "Enabled" or "Disabled"))
-end)
+‏local function k()
+‏    local a = c:FindFirstChild("Titans")
+‏    local b = nil
+‏    local c = math.huge
+‏    if a then
+‏        local d = h()
+‏        for a, a in ipairs(a:GetChildren()) do
+‏            if a:IsA("Model") and a:FindFirstChildOfClass("Humanoid") then
+‏                local a = a:FindFirstChild("Hitboxes")
+‏                if a then
+‏                    local a = a:FindFirstChild("Hit")
+‏                    if a then
+‏                        local a = a:FindFirstChild("Nape")
+‏                        if a then
+‏                            local d = (a.Position - d).Magnitude
+‏                            if d < c and d <= j then
+‏                                c = d
+‏                                b = a.CFrame
+‏                            end
+‏                        end
+‏                    end
+‏                end
+‏            end
+‏        end
+‏    else
+‏        warn("Titans folder not found in Workspace.")
+‏    end
+‏    if b then
+‏        e = b
+‏        print("Closest NapeLocation2 set to:", e)
+‏    else
+‏        warn("No Nape part found within maximum teleport distance.")
+‏    end
+‏    return e
+‏end
 
-createToggleButton("Camera Lock", function(state)
-    cameraLockEnabled = state
-    print("Camera Lock " .. (state and "Enabled" or "Disabled"))
-end)
+‏local function c()
+‏    f = not f
+‏    local a = f and "Teleport Enabled (Bypass status is unknown)" or "Teleport Disabled (Bypass status is unknown)"
+‏    print("Nape Teleportation Toggled: " .. a)
+‏    return a
+‏end
 
-createSlider("Attack Speed", 0.01, 0.1, 0.03, function(value)
-    attackSpeed = value
-    print("Attack Speed set to: " .. value)
-end)
+‏local function h()
+‏    if f then
+‏        k()
+‏        local a = a.Character and a.Character:FindFirstChild("HumanoidRootPart")
+‏        if a and e then
+‏            local b = a.CFrame
+‏            a.CFrame = e
+‏            delay(0.01, function()
+‏                a.Velocity = Vector3.new(300, 10, 0)
+‏            end)
+‏            delay(0.35, function()
+‏                a.CFrame = b
+‏                e = nil
+‏                print("NapeLocation reset to nil")
+‏            end)
+‏        end
+‏    end
+‏end
 
-createButton("Kill All Titans", function()
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0 then
-            pcall(function()
-                obj.Humanoid.Health = 0
-            end)
-        end
-    end
-    print("Attempted to kill all Titans!")
-end)
+‏d.InputEnded:Connect(function(a)
+‏    if a.UserInputType == Enum.UserInputType.MouseButton1 and f == true then
+‏        h()
+‏    end
+‏end)
 
--- Auto-Farm
-spawn(function()
-    while task.wait(0.1) do
-        if not autoFarmEnabled then continue end
-        local titansFolder = workspace:FindFirstChild("Titans")
-        if not titansFolder then
-            for _, obj in pairs(workspace:GetChildren()) do
-                if obj:IsA("Model") and obj.Name:lower():find("titan") then
-                    titansFolder = obj.Parent or obj
-                    break
-                end
-            end
-        end
-        if not titansFolder then
-            titansFolder = workspace
-        end
+‏g.MouseButton1Click:Connect(function()
+‏    local a = c()
+‏    g.BackgroundColor3 = f and Color3.new(0, 1, 0) or Color3.fromRGB(79, 79, 79)
+‏end)
 
-        for _, titan in pairs(titansFolder:GetDescendants()) do
-            if titan:IsA("Model") and titan:FindFirstChild("Humanoid") and titan.Humanoid.Health > 0 then
-                local titanRoot = titan:FindFirstChild("HumanoidRootPart") or titan:FindFirstChildWhichIsA("BasePart")
-                if not titanRoot then continue end
+‏local c = game.Workspace.Unclimbable.Reloads.GasTanks:FindFirstChild("GasTank"):FindFirstChild("GasTank")
 
-                pcall(function()
-                    rootPart.CFrame = CFrame.new(titanRoot.Position + teleportOffset)
-                end)
+‏local function e()
+‏    local a = a.Character and a.Character:FindFirstChild("HumanoidRootPart")
+‏    if c and a then
+‏        local b = c.CFrame
+‏        a.CFrame = c.CFrame + Vector3.new(0, 25, 0)
+‏    end
+‏end
 
-                local attacked = false
-                local attackEventNames = {"BladeHit", "SwingBlade", "Attack", "Hit", "DamageEvent", "DealDamage", "BladeSwing", "Strike"}
-                for _, eventName in ipairs(attackEventNames) do
-                    local attackEvent = game:GetService("ReplicatedStorage"):FindFirstChild(eventName)
-                    if attackEvent then
-                        pcall(function()
-                            for _ = 1, 30 do
-                                attackEvent:FireServer(titan)
-                                task.wait(attackSpeed)
-                            end
-                        end)
-                        attacked = true
-                        break
-                    end
-                end
-                if not attacked then
-                    pcall(function()
-                        titan.Humanoid:TakeDamage(1000)
-                    end)
-                end
-            end
-        end
-    end
-end)
+‏i.MouseButton1Click:Connect(e)
 
--- Auto-Escape مع W، A، S، D عند الإمساك
-spawn(function()
-    local escapeKeys = {"W", "A", "S", "D"}
-    while task.wait(0.05) do
-        if not getgenv().autoescape then continue end
-        local isGrabbed = humanoid.WalkSpeed <= 0 or humanoid:GetState() == Enum.HumanoidStateType.Ragdoll
-        
-        if isGrabbed then
-            for _, key in pairs(escapeKeys) do
-                VIM:SendKeyEvent(true, key, false, game)
-                task.wait(0.05)
-                VIM:SendKeyEvent(false, key, false, game)
-                task.wait(0.05)
-            end
-        end
-    end
-end)
+‏local function a()
+‏    if b.Visible then
+‏        b.Visible = false
+‏        wait(0.35)
+‏    else
+‏        b.Visible = true
+‏        wait(0.35)
+‏    end
+‏end
 
--- Auto-R
-spawn(function()
-    while task.wait(0.1) do
-        if not getgenv().autor then continue end
-        local rig = character:FindFirstChild("Rig_" .. player.Name)
-        if not rig then continue end
-        for _, v in pairs(rig:GetChildren()) do
-            if v.Name == "RightHand" or v.Name == "LeftHand" then
-                for _, v2 in pairs(v:GetChildren()) do
-                    if v2.Name == "Blade_1" and v2:GetAttribute("Broken") == true then
-                        VIM:SendKeyEvent(true, "R", false, game)
-                        task.wait(0.01)
-                        VIM:SendKeyEvent(false, "R", false, game)
-                    end
-                end
-            end
-        end
-    end
-end)
-
--- Nape Expander
-spawn(function()
-    while task.wait(0.1) do
-        if not napeExpanderEnabled then continue end
-        local titansFolder = workspace:FindFirstChild("Titans") or workspace
-        processTitans(titansFolder)
-    end
-end)
-
--- Titan Markers
-spawn(function()
-    local titanMarkers = {}
-    while task.wait(0.1) do
-        if not titanMarkersEnabled then
-            for _, obj in pairs(titanMarkers) do obj:Destroy() end
-            titanMarkers = {}
-            continue
-        end
-        for _, obj in pairs(titanMarkers) do obj:Destroy() end
-        titanMarkers = {}
-        for i, value in ipairs(encodedTable) do
-            if value == "Colossal" or value == "Armored" or value == "Female" or value == "Beast" or value == "Jaw" or value == "Attack" or value == "Warhammer" or value == "Cart" then
-                titanMarkers[value] = Drawing.new("Circle")
-                titanMarkers[value].Radius = 50
-                titanMarkers[value].Position = Vector2.new(rootPart.Position.X + (i * 30), rootPart.Position.Z + 100)
-                titanMarkers[value].Color = Color3.new(0, 1, 0)
-                titanMarkers[value].Thickness = 2
-                titanMarkers[value].Visible = true
-            end
-        end
-    end
-end)
-
--- Camera Lock
-spawn(function()
-    local range = 6000
-    local settings = {x = 5, y = 2, z = -0.3}
-    while task.wait() do
-        if not cameraLockEnabled then continue end
-        if not UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then continue end
-        local titan, closestDist = nil, nil
-        local titansFolder = workspace:FindFirstChild("Titans") or workspace
-        for _, opposition in pairs(titansFolder:GetDescendants()) do
-            local titanRoot = opposition:FindFirstChild("HumanoidRootPart")
-            if titanRoot then
-                local calcDist = (titanRoot.Position - rootPart.Position).Magnitude
-                if calcDist <= range then
-                    if not titan or calcDist < closestDist then
-                        titan = opposition
-                        closestDist = calcDist
-                    end
-                end
-            end
-        end
-        if titan then
-            local align = CFrame.new(rootPart.Position + Vector3.new(settings.x, settings.y, settings.z), titan:FindFirstChild("Fake") and titan.Fake:FindFirstChild("Head") and titan.Fake.Head.Position + Vector3.new(0, -2.4, 0) or titan:FindFirstChild("HumanoidRootPart").Position)
-            camera.CFrame = align
-            camera.CameraSubject = character
-            camera.CameraType = Enum.CameraType.Attach
-            camera.FieldOfView = 120
-        end
-    end
-end)
-
-print("AOTR Script Loaded Successfully with Custom GUI - Grok @ xAI")
+‏d.InputBegan:Connect(function(b)
+‏    if b.KeyCode == Enum.KeyCode.RightShift then
+‏        a()
+‏    end
+‏end)
