@@ -3,6 +3,7 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
 local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- التحقق من وجود PlayerGui
 if not LocalPlayer:FindFirstChild("PlayerGui") then
@@ -163,11 +164,80 @@ local MaxDistance = 1250
 local MaxTeleportDistance = math.huge
 local ESPEnabled = false
 local Highlights = {}
-local ExpandedHitboxes = {} -- لتتبع الـ Hitboxes الموسعة
+local ExpandedHitboxes = {}
+
+-- الحصول على السيف النشط من يد اللاعب
+local function GetActiveBlade()
+    local character = LocalPlayer.Character
+    if character then
+        local rig = character:FindFirstChild("Rig_BOHDAID")
+        if rig then
+            local leftHand = rig:FindFirstChild("LeftHand")
+            if leftHand then
+                for i = 1, 7 do
+                    local blade = leftHand:FindFirstChild("Blade_" .. i)
+                    if blade then
+                        return blade
+                    end
+                end
+            end
+            local rightHand = rig:FindFirstChild("RightHand")
+            if rightHand then
+                for i = 1, 7 do
+                    local blade = rightHand:FindFirstChild("Blade_" .. i)
+                    if blade then
+                        return blade
+                    end
+                end
+            end
+        end
+    end
+    warn("No active blade found for player.")
+    return nil
+end
 
 -- دالة للعثور على Nape
 local function FindNape(hitFolder)
     return hitFolder:FindFirstChild("Nape")
+end
+
+-- دالة لمحاكاة الضربة على Nape وتسجيل القتل
+local function SimulateHit(napeObject, hitter)
+    -- التأكد من وجود Nape والسيف
+    if not napeObject or not hitter then
+        warn("Nape or hitter not found.")
+        return
+    end
+
+    -- العثور على الـ Titan الأب
+    local titan = napeObject
+    while titan and titan.Parent ~= Workspace.Titans do
+        titan = titan.Parent
+    end
+    if not titan then
+        warn("Could not find Titan parent.")
+        return
+    end
+
+    -- العثور على Remote Events
+    local strikeEvent = ReplicatedStorage.Assets.Hitboxes:FindFirstChild("SwiftStrikes")
+    local killEvent = ReplicatedStorage.Assets.Effects.Player:FindFirstChild("Kills")
+
+    -- تسجيل الضربة باستخدام SwiftStrikes
+    if strikeEvent then
+        strikeEvent:FireServer(napeObject, hitter)
+        print("Strike registered on Nape using SwiftStrikes.")
+    else
+        warn("SwiftStrikes RemoteEvent not found.")
+    end
+
+    -- تسجيل القتل باستخدام Kills
+    if killEvent then
+        killEvent:FireServer(titan)
+        print("Kill registered for Titan using Kills.")
+    else
+        warn("Kills RemoteEvent not found.")
+    end
 end
 
 -- دالة لتوسيع منطقة التصادم (Hitbox) لـ Nape مع ربط الضربات
@@ -178,7 +248,7 @@ local function ExpandNapeHitbox(hitFolder)
         local expandedHitbox = Instance.new("Part")
         expandedHitbox.Name = "ExpandedNapeHitbox"
         expandedHitbox.Size = Vector3.new(105 * 2, 120 * 2, 100 * 2) -- مضاعفة الحجم إلى 210x240x200
-        expandedHitbox.Transparency = 1 -- شفاف تمامًا
+        expandedHitbox.Transparency = 1
         expandedHitbox.Position = napeObject.Position
         expandedHitbox.Anchored = false
         expandedHitbox.CanCollide = false
@@ -192,11 +262,14 @@ local function ExpandNapeHitbox(hitFolder)
 
         -- نقل الضربات من الجزء الموسع إلى Nape الأصلي
         expandedHitbox.Touched:Connect(function(hit)
-            -- التأكد من أن الضربة قادمة من أداة اللاعب
             local humanoid = hit.Parent:FindFirstChildOfClass("Humanoid")
             if humanoid and humanoid ~= napeObject.Parent:FindFirstChildOfClass("Humanoid") then
-                -- محاكاة الضربة على Nape الأصلي
-                napeObject.Touched:Fire(hit)
+                local activeBlade = GetActiveBlade()
+                if activeBlade then
+                    SimulateHit(napeObject, activeBlade)
+                else
+                    warn("No active blade found to simulate hit.")
+                end
             end
         end)
 
