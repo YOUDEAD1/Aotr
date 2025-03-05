@@ -163,22 +163,44 @@ local MaxDistance = 1250
 local MaxTeleportDistance = math.huge
 local ESPEnabled = false
 local Highlights = {}
+local ExpandedHitboxes = {} -- لتتبع الـ Hitboxes الموسعة
 
 -- دالة للعثور على Nape
 local function FindNape(hitFolder)
     return hitFolder:FindFirstChild("Nape")
 end
 
--- دالة لتوسيع منطقة التصادم (Hitbox) لـ Nape
+-- دالة لتوسيع منطقة التصادم (Hitbox) لـ Nape مع ربط الضربات
 local function ExpandNapeHitbox(hitFolder)
     local napeObject = FindNape(hitFolder)
     if napeObject then
-        napeObject.Size = Vector3.new(105 * 2, 120 * 2, 100 * 2) -- مضاعفة الحجم إلى 210x240x200
-        napeObject.Transparency = 0.96
-        napeObject.Color = Color3.new(1, 1, 1)
-        napeObject.Material = Enum.Material.Neon
-        napeObject.CanCollide = false
-        napeObject.Anchored = false
+        -- إنشاء جزء وهمي (Hitbox موسع)
+        local expandedHitbox = Instance.new("Part")
+        expandedHitbox.Name = "ExpandedNapeHitbox"
+        expandedHitbox.Size = Vector3.new(105 * 2, 120 * 2, 100 * 2) -- مضاعفة الحجم إلى 210x240x200
+        expandedHitbox.Transparency = 1 -- شفاف تمامًا
+        expandedHitbox.Position = napeObject.Position
+        expandedHitbox.Anchored = false
+        expandedHitbox.CanCollide = false
+        expandedHitbox.Parent = hitFolder
+
+        -- ربط الجزء الموسع بـ Nape الأصلي باستخدام Weld
+        local weld = Instance.new("WeldConstraint")
+        weld.Part0 = napeObject
+        weld.Part1 = expandedHitbox
+        weld.Parent = expandedHitbox
+
+        -- نقل الضربات من الجزء الموسع إلى Nape الأصلي
+        expandedHitbox.Touched:Connect(function(hit)
+            -- التأكد من أن الضربة قادمة من أداة اللاعب
+            local humanoid = hit.Parent:FindFirstChildOfClass("Humanoid")
+            if humanoid and humanoid ~= napeObject.Parent:FindFirstChildOfClass("Humanoid") then
+                -- محاكاة الضربة على Nape الأصلي
+                napeObject.Touched:Fire(hit)
+            end
+        end)
+
+        table.insert(ExpandedHitboxes, expandedHitbox)
     end
 end
 
