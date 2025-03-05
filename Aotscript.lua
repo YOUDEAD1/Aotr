@@ -219,24 +219,22 @@ local function SimulateHit(napeObject, hitter)
         return
     end
 
-    -- العثور على Remote Events
-    local strikeEvent = ReplicatedStorage.Assets.Hitboxes:FindFirstChild("SwiftStrikes")
-    local killEvent = ReplicatedStorage.Assets.Effects.Player:FindFirstChild("Kills")
-
-    -- تسجيل الضربة باستخدام SwiftStrikes
-    if strikeEvent then
-        strikeEvent:FireServer(napeObject, hitter)
-        print("Strike registered on Nape using SwiftStrikes.")
-    else
-        warn("SwiftStrikes RemoteEvent not found.")
+    -- العثور على Humanoid للـ Titan
+    local humanoid = titan:FindFirstChildOfClass("Humanoid")
+    if not humanoid then
+        warn("Humanoid not found for Titan.")
+        return
     end
 
-    -- تسجيل القتل باستخدام Kills
-    if killEvent then
-        killEvent:FireServer(titan)
-        print("Kill registered for Titan using Kills.")
+    -- العثور على Remote Event لتسجيل الضربة
+    local strikeEvent = ReplicatedStorage.Assets.Hitboxes:FindFirstChild("BladeDance")
+    if strikeEvent and strikeEvent:IsA("RemoteEvent") then
+        strikeEvent:FireServer(napeObject, hitter)
+        print("Strike registered on Nape using BladeDance.")
     else
-        warn("Kills RemoteEvent not found.")
+        warn("BladeDance RemoteEvent not found or not a RemoteEvent. Attempting direct damage.")
+        humanoid:TakeDamage(100) -- تطبيق ضرر مباشر كبديل
+        print("Applied direct damage to Titan Humanoid: 100")
     end
 end
 
