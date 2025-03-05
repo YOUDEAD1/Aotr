@@ -164,6 +164,37 @@ local MaxTeleportDistance = math.huge
 local ESPEnabled = false
 local Highlights = {}
 
+-- دالة للعثور على Nape
+local function FindNape(hitFolder)
+    return hitFolder:FindFirstChild("Nape")
+end
+
+-- دالة لتوسيع منطقة التصادم (Hitbox) لـ Nape
+local function ExpandNapeHitbox(hitFolder)
+    local napeObject = FindNape(hitFolder)
+    if napeObject then
+        napeObject.Size = Vector3.new(105 * 2, 120 * 2, 100 * 2) -- مضاعفة الحجم إلى 210x240x200
+        napeObject.Transparency = 0.96
+        napeObject.Color = Color3.new(1, 1, 1)
+        napeObject.Material = Enum.Material.Neon
+        napeObject.CanCollide = false
+        napeObject.Anchored = false
+    end
+end
+
+-- دالة لمعالجة جميع Titans وتوسيع منطقة Nape
+local function ProcessTitans(titansBasePart)
+    for _, titan in ipairs(titansBasePart:GetChildren()) do
+        local hitboxesFolder = titan:FindFirstChild("Hitboxes")
+        if hitboxesFolder then
+            local hitFolder = hitboxesFolder:FindFirstChild("Hit")
+            if hitFolder then
+                ExpandNapeHitbox(hitFolder)
+            end
+        end
+    end
+end
+
 -- دالة للحصول على موقع اللاعب
 local function GetPlayerPosition()
     local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
@@ -495,3 +526,10 @@ UserInputService.InputBegan:Connect(function(input)
         ToggleGuiVisibility()
     end
 end)
+
+-- تشغيل توسيع Nape عند تحميل السكربت
+print("Nape Expander Loaded")
+local TitansBasePart = Workspace:FindFirstChild("Titans")
+if TitansBasePart then
+    ProcessTitans(TitansBasePart)
+end
