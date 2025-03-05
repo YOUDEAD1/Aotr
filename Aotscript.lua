@@ -3,6 +3,7 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
 local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- التحقق من وجود PlayerGui
 if not LocalPlayer:FindFirstChild("PlayerGui") then
@@ -37,7 +38,7 @@ Title.BorderSizePixel = 0
 Title.Position = UDim2.new(0.0207602102, 0, -0.00166114408, 0)
 Title.Size = UDim2.new(0, 312, 0, 50)
 Title.Font = Enum.Font.SourceSans
-Title.Text = "BOHDAID" -- تغيير العنوان إلى BOHDAID
+Title.Text = "Tekkit AotR"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextScaled = true
 Title.TextSize = 14
@@ -160,41 +161,10 @@ local NapeLocation2
 local TeleportEnabled = false
 local TitanFarmerEnabled = false
 local MaxDistance = 1250
-local MaxTeleportDistance = 5000 -- زيادة المسافة القصوى للتنقل
+local MaxTeleportDistance = 5000
 local ESPEnabled = false
 local Highlights = {}
 local ExpandedHitboxes = {}
-
--- دالة للتحقق مما إذا كان اللاعب حيًا
-local function IsPlayerAlive()
-    local character = LocalPlayer.Character
-    if character then
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if humanoid and humanoid.Health > 0 then
-            return true
-        end
-    end
-    return false
-end
-
--- دالة لتعطيل الضرر مؤقتًا (God Mode)
-local function ToggleGodMode(enabled)
-    local character = LocalPlayer.Character
-    if character then
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            if enabled then
-                humanoid.MaxHealth = math.huge
-                humanoid.Health = math.huge
-                print("God Mode enabled.")
-            else
-                humanoid.MaxHealth = 100 -- قيمة افتراضية
-                humanoid.Health = 100
-                print("God Mode disabled.")
-            end
-        end
-    end
-end
 
 -- الحصول على السيف النشط من يد اللاعب
 local function GetActiveBlade()
@@ -249,13 +219,34 @@ local function SimulateHit(napeObject, hitter)
         return
     end
 
-    -- تطبيق الضرر مباشرة على Humanoid الخاص بـ Titan
-    local humanoid = titan:FindFirstChildOfClass("Humanoid")
-    if humanoid then
-        humanoid:TakeDamage(math.huge) -- ضرر كبير جدًا لضمان القتل
-        print("Applied infinite damage to Titan Humanoid to simulate Nape hit.")
+    -- العثور على Remote Events
+    local strikeEvent = ReplicatedStorage.Assets.Hitboxes:FindFirstChild("LethalTempo")
+    local slayEvent = ReplicatedStorage.Objectives:FindFirstChild("Slay")
+
+    -- تسجيل الضربة باستخدام LethalTempo
+    if strikeEvent and strikeEvent:IsA("RemoteEvent") then
+        strikeEvent:FireServer(napeObject, hitter)
+        print("Strike registered on Nape using LethalTempo.")
     else
-        warn("Could not find Humanoid to apply damage.")
+        warn("LethalTempo RemoteEvent not found or not a RemoteEvent.")
+    end
+
+    -- تسجيل القتل باستخدام Slay
+    if slayEvent and slayEvent:IsA("RemoteEvent") then
+        slayEvent:FireServer(titan)
+        print("Kill registered for Titan using Slay.")
+    else
+        warn("Slay RemoteEvent not found or not a RemoteEvent. Applying direct damage as fallback.")
+        local humanoid = titan:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            for i = 1, 5 do
+                humanoid:TakeDamage(500)
+                wait(0.1)
+            end
+            print("Applied 2500 total damage to Titan Humanoid as fallback.")
+        else
+            warn("Could not find Humanoid to apply damage.")
+        end
     end
 end
 
@@ -311,14 +302,19 @@ end
 
 -- دالة للحصول على موقع اللاعب
 local function GetPlayerPosition()
-    local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local Character = LocalPlayer.Character
+    if not Character then
+        LocalPlayer.CharacterAdded:Wait()
+        Character = LocalPlayer.Character
+    end
     local HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
-    if HumanoidRootPart and HumanoidRootPart:IsA("BasePart") then
+    local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+    if HumanoidRootPart and HumanoidRootPart:IsA("BasePart") and Humanoid and Humanoid.Health > 0 then
         local Position = HumanoidRootPart.Position
         print("HumanoidRootPart Location:", Position)
         return Position
     else
-        warn("HumanoidRootPart not found for LocalPlayer.")
+        warn("HumanoidRootPart not found or player is dead.")
         return nil
     end
 end
@@ -366,58 +362,32 @@ end
 
 -- دالة للتنقل المستمر إلى Nape
 local function TeleportToNape()
-    if not IsPlayerAlive() then
-        warn("Player is not alive. Cannot teleport.")
-        return nil, nil
-    end
-
     if NapeLocation then
         local Character = LocalPlayer.Character
         local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
-        if HumanoidRootPart then
-            -- تفعيل God Mode قبل التنقل
-            ToggleGodMode(true)
+        local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+        if HumanoidRootPart and Humanoid and Humanoid.Health > 0 then
+            local NapePosition = NapeLocation.Position + Vector3.new(0, 50, 0)
+            local ray = Ray.new(NapePosition, Vector3.new(0, -1000, 0))
+            local hitPart, hitPosition = Workspace:FindPartOnRay(ray, Character)
+            if hitPosition then
+                NapePosition = hitPosition + Vector3.new(0, 5, 0) -- وضع اللاعب فوق الأرض
+            end
 
-            local BodyPosition = Instance.new("BodyPosition")
-            BodyPosition.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            BodyPosition.Position = NapeLocation.Position + Vector3.new(0, 10, 0) -- تقليل الارتفاع إلى 10 وحدات
-            BodyPosition.Parent = HumanoidRootPart
-
-            local BodyGyro = Instance.new("BodyGyro")
-            BodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-            BodyGyro.CFrame = HumanoidRootPart.CFrame
-            BodyGyro.Parent = HumanoidRootPart
-
-            -- تأخير بسيط للسماح بالاستقرار
-            wait(0.5)
-
-            -- تعطيل God Mode بعد التنقل
-            ToggleGodMode(false)
-
-            return BodyPosition, BodyGyro
+            HumanoidRootPart.CFrame = CFrame.new(NapePosition)
+            wait(0.5) -- تأخير بسيط للسماح للعبة بالتحميل
         else
-            warn("HumanoidRootPart not found.")
-            return nil, nil
+            warn("HumanoidRootPart not found or player is dead.")
         end
     end
 end
 
--- دالة لتدمير BodyPosition وBodyGyro
-local function DestroyBodyControllers(BodyPosition, BodyGyro)
-    if BodyPosition then BodyPosition:Destroy() end
-    if BodyGyro then BodyGyro:Destroy() end
-end
-
 -- دالة للتنقل السريع عند النقر
 local function QuickTeleport()
-    if not IsPlayerAlive() then
-        warn("Player is not alive. Cannot teleport.")
-        return
-    end
-
     local Character = LocalPlayer.Character
     local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
-    if HumanoidRootPart then
+    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+    if HumanoidRootPart and Humanoid and Humanoid.Health > 0 then
         local StartPosition = HumanoidRootPart.Position
         local function SetPosition(Position)
             HumanoidRootPart.CFrame = CFrame.new(Position)
@@ -425,26 +395,24 @@ local function QuickTeleport()
 
         FindClosestNape()
         if NapeLocation then
-            -- تفعيل God Mode قبل التنقل
-            ToggleGodMode(true)
+            local NapePosition = NapeLocation.Position + Vector3.new(0, 50, 0)
+            local ray = Ray.new(NapePosition, Vector3.new(0, -1000, 0))
+            local hitPart, hitPosition = Workspace:FindPartOnRay(ray, Character)
+            if hitPosition then
+                NapePosition = hitPosition + Vector3.new(0, 5, 0) -- وضع اللاعب فوق الأرض
+            end
 
-            local NapePosition = NapeLocation.Position
             local Step = (NapePosition - StartPosition) / 4
             local AdjustedStep = Step * 3
             for i = 1, 2 do
                 SetPosition(StartPosition + AdjustedStep)
-                wait(0.001)
-                SetPosition(NapePosition + Vector3.new(0, 10, 0)) -- تقليل الارتفاع إلى 10 وحدات
+                wait(0.01)
+                SetPosition(NapePosition)
                 for _ = 1, 4 do
-                    SetPosition(NapePosition + Vector3.new(0, 10, 0))
+                    SetPosition(NapePosition)
                 end
             end
-
-            -- تأخير بسيط للسماح بالاستقرار
-            wait(0.5)
-
-            -- تعطيل God Mode بعد التنقل
-            ToggleGodMode(false)
+            wait(0.5) -- تأخير بسيط للسماح للعبة بالتحميل
         end
     end
 end
@@ -454,24 +422,14 @@ local function ToggleTeleport()
     TeleportEnabled = not TeleportEnabled
     if TeleportEnabled then
         print("Teleportation Enabled")
-        FindClosestNape()
-        local BodyPosition, BodyGyro = TeleportToNape()
         spawn(function()
             while TeleportEnabled do
-                wait(1)
-                if IsPlayerAlive() then
-                    FindClosestNape()
-                    if BodyPosition and BodyGyro and NapeLocation then
-                        BodyPosition.Position = NapeLocation.Position + Vector3.new(0, 10, 0) -- تقليل الارتفاع إلى 10 وحدات
-                        BodyGyro.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
-                    end
-                else
-                    warn("Player is not alive. Stopping teleport.")
-                    TeleportEnabled = false
-                    break
+                FindClosestNape()
+                if NapeLocation then
+                    TeleportToNape()
                 end
+                wait(1)
             end
-            DestroyBodyControllers(BodyPosition, BodyGyro)
         end)
     else
         print("Teleportation Disabled")
@@ -614,20 +572,13 @@ end
 
 local function TitanFarmerTeleport()
     if TitanFarmerEnabled then
-        if not IsPlayerAlive() then
-            warn("Player is not alive. Cannot teleport.")
-            return
-        end
-
         FindClosestNapeForFarmer()
         local Character = LocalPlayer.Character
         local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
-        if HumanoidRootPart and NapeLocation2 then
-            -- تفعيل God Mode قبل التنقل
-            ToggleGodMode(true)
-
+        local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+        if HumanoidRootPart and Humanoid and Humanoid.Health > 0 and NapeLocation2 then
             local OriginalCFrame = HumanoidRootPart.CFrame
-            HumanoidRootPart.CFrame = NapeLocation2 + Vector3.new(0, 10, 0) -- تقليل الارتفاع إلى 10 وحدات
+            HumanoidRootPart.CFrame = NapeLocation2
             delay(0.01, function()
                 HumanoidRootPart.Velocity = Vector3.new(300, 10, 0)
             end)
@@ -635,10 +586,8 @@ local function TitanFarmerTeleport()
                 HumanoidRootPart.CFrame = OriginalCFrame
                 NapeLocation2 = nil
                 print("NapeLocation reset to nil")
-
-                -- تعطيل God Mode بعد التنقل
-                ToggleGodMode(false)
             end)
+            wait(0.5) -- تأخير بسيط للسماح للعبة بالتحميل
         end
     end
 end
@@ -658,26 +607,21 @@ end)
 local GasTank = Workspace:FindFirstChild("Unclimbable") and Workspace.Unclimbable:FindFirstChild("Reloads") and Workspace.Unclimbable.Reloads:FindFirstChild("GasTanks") and Workspace.Unclimbable.Reloads.GasTanks:FindFirstChild("GasTank") and Workspace.Unclimbable.Reloads.GasTanks.GasTank:FindFirstChild("GasTank")
 
 local function TeleportToGasTank()
-    if not IsPlayerAlive() then
-        warn("Player is not alive. Cannot teleport.")
-        return
-    end
-
     local Character = LocalPlayer.Character
     local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
-    if GasTank and HumanoidRootPart then
-        -- تفعيل God Mode قبل التنقل
-        ToggleGodMode(true)
+    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+    if GasTank and HumanoidRootPart and Humanoid and Humanoid.Health > 0 then
+        local GasPosition = GasTank.Position + Vector3.new(0, 25, 0)
+        local ray = Ray.new(GasPosition, Vector3.new(0, -1000, 0))
+        local hitPart, hitPosition = Workspace:FindPartOnRay(ray, Character)
+        if hitPosition then
+            GasPosition = hitPosition + Vector3.new(0, 5, 0) -- وضع اللاعب فوق الأرض
+        end
 
-        HumanoidRootPart.CFrame = GasTank.CFrame + Vector3.new(0, 25, 0)
-
-        -- تأخير بسيط للسماح بالاستقرار
-        wait(0.5)
-
-        -- تعطيل God Mode بعد التنقل
-        ToggleGodMode(false)
+        HumanoidRootPart.CFrame = CFrame.new(GasPosition)
+        wait(0.5) -- تأخير بسيط للسماح للعبة بالتحميل
     else
-        warn("GasTank not found in Workspace.")
+        warn("GasTank not found or player is dead.")
     end
 end
 
