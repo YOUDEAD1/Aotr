@@ -1,49 +1,82 @@
--- Shindo Life XP & Mastery Script by Grok 3 (xAI)
+-- Shindo Life Super Saiyan Hack Script by Grok 3 (xAI)
 local player = game.Players.LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local statz = ReplicatedStorage.statz
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local RunService = game:GetService("RunService")
 
--- GUI Setup (واجهة المستخدم)
-local screenGui = Instance.new("ScreenGui")
-local mainFrame = Instance.new("Frame")
-local xpButton = Instance.new("TextButton")
-local masteryFrame = Instance.new("Frame")
-local masteryButtons = {}
-local prestigeFrame = Instance.new("Frame")
-local prestigeButtons = {}
+-- Advanced Error Handling
+local function safeWait(time)
+    return pcall(function() wait(time) end)
+end
 
--- Configuration
-screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-screenGui.Name = "ShindoCheatGUI"
-mainFrame.Size = UDim2.new(0, 200, 0, 300)
-mainFrame.Position = UDim2.new(0.5, -100, 0.5, -150)
-mainFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-mainFrame.BorderSizePixel = 0
-mainFrame.Parent = screenGui
+-- Dynamic Stat Finder
+local function findStatz()
+    local statz = ReplicatedStorage:FindFirstChild("statz")
+    if not statz then
+        for _, child in pairs(ReplicatedStorage:GetChildren()) do
+            if child:FindFirstChild("lvl") and child:FindFirstChild("mastery") then
+                statz = child
+                break
+            end
+        end
+    end
+    return statz
+end
 
--- XP Button
-xpButton.Size = UDim2.new(0, 180, 0, 50)
-xpButton.Position = UDim2.new(0, 10, 0, 10)
-xpButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-xpButton.Text = "Add 50M XP"
-xpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-xpButton.Parent = mainFrame
+local statz = findStatz()
+if not statz then
+    warn("statz not found, script aborted!")
+    return
+end
 
--- Mastery Frame
-masteryFrame.Size = UDim2.new(0, 180, 0, 150)
-masteryFrame.Position = UDim2.new(0, 10, 0, 70)
-masteryFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-masteryFrame.BorderSizePixel = 0
-masteryFrame.Parent = mainFrame
+-- Metatable Hook for Anti-Cheat Bypass
+local mt = getrawmetatable(game)
+setreadonly(mt, false)
+local oldIndex = mt.__index
+local oldNewIndex = mt.__newindex
+local oldFireServer = mt.__index.FireServer
 
--- Prestige Frame
-prestigeFrame.Size = UDim2.new(0, 180, 0, 70)
-prestigeFrame.Position = UDim2.new(0, 10, 0, 230)
-prestigeFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-prestigeFrame.BorderSizePixel = 0
-prestigeFrame.Parent = mainFrame
+mt.__index = newcclosure(function(self, key)
+    if key == "FireServer" and checkcaller() then
+        return function(...) return true end
+    end
+    return oldIndex(self, key)
+end)
 
--- Mastery Paths
+mt.__newindex = newcclosure(function(self, key, value)
+    if checkcaller() and typeof(value) == "number" then
+        return true
+    end
+    return oldNewIndex(self, key, value)
+end)
+
+-- Proxy Function for Safe Modification
+local function modifySafely(path, value)
+    local success, err = pcall(function()
+        if path and path.Value ~= nil then
+            local proxy = newproxy(true)
+            getmetatable(proxy).__index = function() return path.Value + value end
+            getmetatable(proxy).__newindex = function(_, _, v) path.Value = v end
+            path.Value = proxy
+        else
+            local remote = ReplicatedStorage:WaitForChild("Remotes", 5):WaitForChild("UpdateStatsRemote", 5)
+            if remote then
+                remote:FireServer(path, value)
+            end
+        end
+    end)
+    if not success then
+        warn("Modify failed: " .. err)
+    end
+end
+
+-- Paths
+local levelPaths = {
+    {name = "Exp", path = statz.lvl.exp},
+    {name = "Lvl", path = statz.lvl.lvl},
+    {name = "MaxExp", path = statz.lvl.maxexp}
+}
+
 local masteryPaths = {
     {name = "Chakra", path = statz.mastery.chakra},
     {name = "Health", path = statz.mastery.health},
@@ -52,84 +85,102 @@ local masteryPaths = {
     {name = "Points", path = statz.mastery.points}
 }
 
--- Prestige Paths
 local prestigePaths = {
     {name = "MaxLvlPres", path = statz.prestige.maxlvlpres},
     {name = "Number", path = statz.prestige.number},
     {name = "Rank", path = statz.prestige.rank}
 }
 
--- Level Paths
-local levelPaths = {
-    {name = "Exp", path = statz.lvl.exp},
-    {name = "Lvl", path = statz.lvl.lvl},
-    {name = "MaxExp", path = statz.lvl.maxexp}
-}
-
--- Function to Add Values
-local function addValue(path, value)
+-- Bloodline Unlock (Eye Powers)
+local function unlockBloodline(bloodlineName)
     local success, err = pcall(function()
-        path.Value = path.Value + value
+        local remote = ReplicatedStorage:WaitForChild("Remotes", 5):WaitForChild("ActivateBloodline", 5)
+        if remote then
+            remote:FireServer(bloodlineName)
+        end
     end)
     if not success then
-        warn("Error updating " .. path.Name .. ": " .. err)
+        warn("Bloodline unlock failed: " .. err)
     end
 end
 
--- XP Button Function
-xpButton.MouseButton1Click:Connect(function()
+-- GUI Setup
+local screenGui = Instance.new("ScreenGui")
+local mainFrame = Instance.new("Frame")
+screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.Name = "SuperSaiyanHack"
+mainFrame.Size = UDim2.new(0, 300, 0, 550)
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -275)
+mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+
+local function createButton(text, yPos, action)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0, 280, 0, 40)
+    button.Position = UDim2.new(0, 10, 0, yPos)
+    button.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    button.Text = text
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Parent = mainFrame
+    button.MouseButton1Click:Connect(action)
+    return button
+end
+
+-- Buttons
+createButton("Add 50M XP", 10, function()
     for _, path in pairs(levelPaths) do
         if path.name == "Exp" then
-            addValue(path.path, 50000000) -- 50 million XP
+            modifySafely(path.path, 50000000)
+            print("Added 50M XP to " .. path.name)
         end
     end
-    print("Added 50M XP to " .. player.Name)
 end)
 
--- Mastery Buttons
-local yOffset = 5
-for i, mastery in pairs(masteryPaths) do
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0, 160, 0, 25)
-    button.Position = UDim2.new(0, 10, 0, yOffset)
-    button.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-    button.Text = "Add 10k " .. mastery.name
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.Parent = masteryFrame
-    table.insert(masteryButtons, button)
-
-    button.MouseButton1Click:Connect(function()
-        addValue(mastery.path, 10000) -- 10,000 points
-        print("Added 10k to " .. mastery.name .. " for " .. player.Name)
+local yOffset = 60
+for _, mastery in pairs(masteryPaths) do
+    createButton("Add 10k " .. mastery.name, yOffset, function()
+        modifySafely(mastery.path, 10000)
+        print("Added 10k to " .. mastery.name)
     end)
-    yOffset = yOffset + 30
+    yOffset = yOffset + 45
 end
 
--- Prestige Buttons
-yOffset = 5
-for i, prestige in pairs(prestigePaths) do
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0, 160, 0, 25)
-    button.Position = UDim2.new(0, 10, 0, yOffset)
-    button.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-    button.Text = "Add 10k " .. prestige.name
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.Parent = prestigeFrame
-    table.insert(prestigeButtons, button)
-
-    button.MouseButton1Click:Connect(function()
-        addValue(prestige.path, 10000) -- 10,000 points
-        print("Added 10k to " .. prestige.name .. " for " .. player.Name)
+yOffset = 360
+for _, prestige in pairs(prestigePaths) do
+    createButton("Add 10k " .. prestige.name, yOffset, function()
+        modifySafely(prestige.path, 10000)
+        print("Added 10k to " .. prestige.name)
     end)
-    yOffset = yOffset + 30
+    yOffset = yOffset + 45
 end
 
--- Error Handling
+-- Bloodline Buttons
+createButton("Unlock Sharingan", 465, function()
+    unlockBloodline("Sasuke-Blood")
+    print("Attempted to unlock Sharingan")
+end)
+
+createButton("Unlock Rinnegan", 510, function()
+    unlockBloodline("Rinnegan")
+    print("Attempted to unlock Rinnegan")
+end)
+
+-- Anti-Detection System
 spawn(function()
-    while wait(1) do
-        if not player or not statz then
-            warn("Player or statz not found, script may fail!")
+    while wait(2.5) do
+        pcall(function()
+            local antiCheat = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("AntiCheatCheck", 1)
+            if antiCheat then
+                antiCheat:FireServer(true)
+            end
+        end)
+        if not player or player.Parent ~= game.Players then
+            warn("Player disconnected, stopping script!")
+            screenGui:Destroy()
             break
         end
     end
 end)
+
+print("Super Saiyan Hack Loaded for " .. player.Name .. " - Good Luck!")
